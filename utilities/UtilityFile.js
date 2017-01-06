@@ -20,9 +20,10 @@ UtilityFile.prototype.getURL = function () {
   return url;
 };
 
-/**
- * Created by Tauqeer on 11-08-2016.
- */
+UtilityFile.prototype.validateEmail = function (email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}
 
 module.exports = UtilityFile;
 
