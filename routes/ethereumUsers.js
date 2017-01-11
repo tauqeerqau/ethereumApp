@@ -161,7 +161,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                     else {
                         response.message = "User Password is incorrect";
                         response.code = serverMessage.returnPasswordMissMatch();
-                        response.data = ethereumUser;
+                        response.data = null;
                         res.json(response);
                     }
                 }
