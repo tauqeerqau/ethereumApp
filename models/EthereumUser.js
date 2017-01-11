@@ -12,7 +12,10 @@ var UserSchema   = new mongoose.Schema({
     userContactNumber: String,
     userPassword: String,
     userEthereumId: String,
-    userProfileStatus: Number
+    userProfileStatus: Number,
+    userAddress: String,
+    userOccupation: String,
+    userProfilePictureURL: String
 });
 
 // Export the Mongoose model
