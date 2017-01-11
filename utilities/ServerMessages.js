@@ -15,6 +15,10 @@ ServerMessages.prototype.returnPasswordMissMatch=function() {
 
 ServerMessages.prototype.returnNotFound=function() {
   return 400;
+}
+
+ServerMessages.prototype.returnUserAlreadyExists=function() {
+  return 500;
 }    
 
 // Export the Mongoose model

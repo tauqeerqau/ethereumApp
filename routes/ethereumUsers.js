@@ -61,7 +61,7 @@ postEthereumUserRoute.post(function (req, res) {
     EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
         if (ethereumUser != null) {
             response.message = "User already Exists";
-            response.code = serverMessage.returnSuccess();
+            response.code = serverMessage.returnUserAlreadyExists();
             response.data = ethereumUser;
             res.json(response);
         }
