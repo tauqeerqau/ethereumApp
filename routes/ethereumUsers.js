@@ -193,7 +193,8 @@ postEthereumUserMobileRoute.post(function (req, res) {
                         res.json(response);
                     }
                     else {
-                        if (ethereumUserMobileCode.userMobileCode == req.body.userMobileCode) {
+                        if (ethereumUserMobileCode.userMobileCode == req.body.userMobileCode) 
+						{
                             ethereumUser.userContactNumber = ethereumUserMobileCode.userContactNumber;
                             ethereumUser.save(function (err, ethereumUser) {
                                 if (err) {
@@ -207,8 +208,16 @@ postEthereumUserMobileRoute.post(function (req, res) {
                                 }
                             });
                         }
+						else
+                        {
+                            response.message = "Code Entered is Invalid";
+                            response.code = serverMessage.returnPasswordMissMatch();;
+                            response.data = ethereumUser;
+                            res.json(response);
+                        }
 
                     }
+					
                 });
             }
         }
