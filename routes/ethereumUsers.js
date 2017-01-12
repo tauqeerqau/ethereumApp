@@ -197,7 +197,7 @@ postEthereumUserMobileRoute.post(function (req, res) {
                     else {
                         if (ethereumUserMobileCode.userMobileCode == req.body.userMobileCode) {
                             ethereumUser.userContactNumber = ethereumUserMobileCode.userContactNumber;
-							ethereumUser.userProfileStatus = 2;
+                            ethereumUser.userProfileStatus = 2;
                             ethereumUser.save(function (err, ethereumUser) {
                                 if (err) {
 
