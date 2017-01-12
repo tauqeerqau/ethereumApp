@@ -310,7 +310,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                     ethereumUserMobileCode = new EthereumUserMobileCode();
                     ethereumUserMobileCode.userName = req.body.userName;
                     ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
-                    ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 90000) + 10000;
+                    ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 9000) + 1000;
                     ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
                         if (err) {
                             response.message = "User Mobile Code is not Saved";
