@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 var multipart = require('connect-multiparty');
 
 var EthereumUser = require('./../models/EthereumUser');
+var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
 
 
 var multipartMiddleware = multipart();
@@ -13,7 +14,8 @@ var postEthereumUserRoute = router.route('/addEthereumUser');
 var getEthereumUserRoute = router.route('/getEthereumUsers');
 var postEthereumUserLoginRoute = router.route('/ethereumUserLogin');
 var postEthereumUserMobileRoute = router.route('/ethereumUserMobileChange');
-var postEthereumUserCompleteProfileRoute = router.route('/ethereumUserCompleteProfile'); 
+var postEthereumUserCompleteProfileRoute = router.route('/ethereumUserCompleteProfile');
+var postEthereumUserMobileCodeRoute = router.route('/ethereumUserMobileCode');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -33,7 +35,7 @@ var response = new Response(
 
     });
 
-    var serverMessage = new ServerMessage(
+var serverMessage = new ServerMessage(
     {
 
     });
@@ -78,8 +80,7 @@ postEthereumUserRoute.post(function (req, res) {
                 if (err) {
                     res.send(err);
                 }
-                else 
-                {
+                else {
                     response.message = "User Added Successfully";
                     response.code = serverMessage.returnSuccess();;
                     response.data = ethereumUser;
@@ -184,33 +185,38 @@ postEthereumUserMobileRoute.post(function (req, res) {
                 res.json(response);
             }
             if (ethereumUser != null) {
-                if (req.body.userMobileCode == 1234) {
-                    ethereumUser.userContactNumber = "66666623";
-                    ethereumUser.save(function (err, ethereumUser) {
-                        if (err) {
+                EthereumUserMobileCode.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUserMobileCode) {
+                    if (ethereumUserMobileCode == null) {
+                        response.message = "User Code is not sent yet";
+                        response.code = serverMessage.returnNotFound();
+                        response.data = null;
+                        res.json(response);
+                    }
+                    else {
+                        if (ethereumUserMobileCode.userMobileCode == req.body.userMobileCode) {
+                            ethereumUser.userContactNumber = ethereumUserMobileCode.userContactNumber;
+                            ethereumUser.save(function (err, ethereumUser) {
+                                if (err) {
 
+                                }
+                                else {
+                                    response.message = "User Mobile Number is Updated";
+                                    response.code = serverMessage.returnSuccess();;
+                                    response.data = ethereumUser;
+                                    res.json(response);
+                                }
+                            });
                         }
-                        else {
-                            response.message = "User Mobile Number is Updated";
-                            response.code = serverMessage.returnSuccess();;
-                            response.data = ethereumUser;
-                            res.json(response);
-                        }
-                    });
-                }
-                else {
-                    response.message = "Code is not Correct";
-                    response.code = serverMessage.returnPasswordMissMatch();
-                    response.data = null;
-                    res.json(response);
-                }
+
+                    }
+                });
             }
         }
 
     });
 });
 
-postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function(req,res){
+postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, res) {
     console.log(res.json(req.body.userName));
     /*EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
         if (err) {
@@ -231,6 +237,50 @@ postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function(req,res)
         }
 
     });*/
+});
+
+postEthereumUserMobileCodeRoute.post(function (req, res) {
+    EthereumUserMobileCode.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUserMobileCode) {
+        if (ethereumUserMobileCode == null) {
+            ethereumUserMobileCode = new EthereumUserMobileCode();
+            ethereumUserMobileCode.userName = req.body.userName;
+            ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
+            ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 90000) + 10000;
+            ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
+                if (err) {
+                    response.message = "User Mobile Code is not Saved";
+                    response.code = serverMessage.returnFailure();;
+                    response.data = err;
+                    res.json(response);
+                }
+                else {
+                    response.message = "User Mobile Code is Saved";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = etherUserMobileCode;
+                    res.json(response);
+                }
+            });
+        }
+        else {
+            ethereumUserMobileCode.userName = req.body.userName;
+            ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
+            ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 90000) + 10000;
+            ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
+                if (err) {
+                    response.message = "User Mobile Code is not Saved";
+                    response.code = serverMessage.returnFailure();;
+                    response.data = err;
+                    res.json(response);
+                }
+                else {
+                    response.message = "User Mobile Code is Saved";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = etherUserMobileCode;
+                    res.json(response);
+                }
+            });
+        }
+    });
 });
 
 module.exports = router;

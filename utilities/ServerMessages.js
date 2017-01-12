@@ -21,5 +21,9 @@ ServerMessages.prototype.returnUserAlreadyExists=function() {
   return 500;
 }    
 
+ServerMessages.prototype.returnFailure=function() {
+  return 300;
+}
+
 // Export the Mongoose model
 module.exports = ServerMessages;
