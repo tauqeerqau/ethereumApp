@@ -3,6 +3,8 @@ var router = express.Router();
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var multipart = require('connect-multiparty');
+var uuid = require('node-uuid');
+var fs = require("fs");
 
 var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
@@ -193,8 +195,7 @@ postEthereumUserMobileRoute.post(function (req, res) {
                         res.json(response);
                     }
                     else {
-                        if (ethereumUserMobileCode.userMobileCode == req.body.userMobileCode) 
-						{
+                        if (ethereumUserMobileCode.userMobileCode == req.body.userMobileCode) {
                             ethereumUser.userContactNumber = ethereumUserMobileCode.userContactNumber;
                             ethereumUser.save(function (err, ethereumUser) {
                                 if (err) {
@@ -208,16 +209,13 @@ postEthereumUserMobileRoute.post(function (req, res) {
                                 }
                             });
                         }
-						else
-                        {
+                        else {
                             response.message = "Code Entered is Invalid";
                             response.code = serverMessage.returnPasswordMissMatch();;
                             response.data = ethereumUser;
                             res.json(response);
                         }
-
                     }
-					
                 });
             }
         }
@@ -226,66 +224,125 @@ postEthereumUserMobileRoute.post(function (req, res) {
 });
 
 postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, res) {
-    console.log(res.json(req.body.userName));
-    /*EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
         if (err) {
             res.send(err);
         }
         else {
             if (ethereumUser == null) {
                 response.message = "User does not Exist";
-                response.code = 200;
+                response.code = serverMessage.returnNotFound;
                 response.data = null;
                 res.json(response);
             }
-            if (ethereumUser != null) 
-            {
+            if (ethereumUser != null) {
                 ethereumUser.userOccupation = req.body.userOccupation;
                 ethereumUser.userAddress = req.body.userAddress;
+                if (req.files.file != null) {
+                    var extension = "";
+                    if (req.files.file.headers['content-type'] == 'image/jpeg') {
+                        extension = ".jpg";
+                    }
+                    else if (req.files.file.headers['content-type'] == 'image/png') {
+                        extension = ".png";
+                    }
+                    var imageName = uuid.v4() + extension;
+                    var fullUrl = req.protocol + '://' + req.get('host');
+                    var file = __dirname + "./../public/images/" + imageName;
+                    fs.readFile(req.files.file.path, function (err, data) {
+                        fs.writeFile(file, data, function (err) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                ethereumUser.userProfilePictureURL = fullUrl + "/images/" + imageName;
+                                ethereumUser.save(function (err) {
+                                    if (err) {
+                                        res.send(err);
+                                    }
+                                    else {
+                                        response.message = "User Profile Added Successfully";
+                                        response.code = serverMessage.returnSuccess();;
+                                        response.data = ethereumUser;
+                                        res.json(response);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+                else {
+                    ethereumUser.save(function (err) {
+                        if (err) {
+                            res.send(err);
+                        }
+                        else {
+                            response.message = "User Profile Added Successfully";
+                            response.code = serverMessage.returnSuccess();;
+                            response.data = ethereumUser;
+                            res.json(response);
+                        }
+                    });
+                }
             }
         }
 
-    });*/
+    });
 });
 
 postEthereumUserMobileCodeRoute.post(function (req, res) {
-    EthereumUserMobileCode.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUserMobileCode) {
-        if (ethereumUserMobileCode == null) {
-            ethereumUserMobileCode = new EthereumUserMobileCode();
-            ethereumUserMobileCode.userName = req.body.userName;
-            ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
-            ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 90000) + 10000;
-            ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
-                if (err) {
-                    response.message = "User Mobile Code is not Saved";
-                    response.code = serverMessage.returnFailure();;
-                    response.data = err;
-                    res.json(response);
-                }
-                else {
-                    response.message = "User Mobile Code is Saved";
-                    response.code = serverMessage.returnSuccess();
-                    response.data = etherUserMobileCode;
-                    res.json(response);
-                }
-            });
+    EthereumUser.findOne({ 'userContactNumber': req.body.userContactNumber }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (err) {
+            response.message = "User Mobile Code is not Saved";
+            response.code = serverMessage.returnFailure();
+            response.data = err;
+            res.json(response);
+        }
+        if (ethereumUser != null) {
+            response.message = "User with this Contact Number Already Exists";
+            response.code = serverMessage.returnUserAlreadyExists();
+            response.data = err;
+            res.json(response);
         }
         else {
-            ethereumUserMobileCode.userName = req.body.userName;
-            ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
-            ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 90000) + 10000;
-            ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
-                if (err) {
-                    response.message = "User Mobile Code is not Saved";
-                    response.code = serverMessage.returnFailure();;
-                    response.data = err;
-                    res.json(response);
+            EthereumUserMobileCode.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUserMobileCode) {
+                if (ethereumUserMobileCode == null) {
+                    ethereumUserMobileCode = new EthereumUserMobileCode();
+                    ethereumUserMobileCode.userName = req.body.userName;
+                    ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
+                    ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 90000) + 10000;
+                    ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
+                        if (err) {
+                            response.message = "User Mobile Code is not Saved";
+                            response.code = serverMessage.returnFailure();;
+                            response.data = err;
+                            res.json(response);
+                        }
+                        else {
+                            response.message = "User Mobile Code is Saved";
+                            response.code = serverMessage.returnSuccess();
+                            response.data = etherUserMobileCode;
+                            res.json(response);
+                        }
+                    });
                 }
                 else {
-                    response.message = "User Mobile Code is Saved";
-                    response.code = serverMessage.returnSuccess();
-                    response.data = etherUserMobileCode;
-                    res.json(response);
+                    ethereumUserMobileCode.userName = req.body.userName;
+                    ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
+                    ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 90000) + 10000;
+                    ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
+                        if (err) {
+                            response.message = "User Mobile Code is not Saved";
+                            response.code = serverMessage.returnFailure();;
+                            response.data = err;
+                            res.json(response);
+                        }
+                        else {
+                            response.message = "User Mobile Code is Saved";
+                            response.code = serverMessage.returnSuccess();
+                            response.data = etherUserMobileCode;
+                            res.json(response);
+                        }
+                    });
                 }
             });
         }

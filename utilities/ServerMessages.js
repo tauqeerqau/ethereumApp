@@ -9,6 +9,10 @@ ServerMessages.prototype.returnSuccess=function() {
   return 200;
 } 
 
+ServerMessages.prototype.returnSuccess=function() {
+  return 200;
+} 
+
 ServerMessages.prototype.returnPasswordMissMatch=function() {
   return 401;
 }
