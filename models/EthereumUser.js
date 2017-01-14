@@ -15,7 +15,8 @@ var UserSchema   = new mongoose.Schema({
     userProfileStatus: Number,
     userAddress: String,
     userOccupation: String,
-    userProfilePictureURL: String
+    userProfilePictureURL: String,
+    ethereumUserApplicationToken: String
 });
 
 // Export the Mongoose model

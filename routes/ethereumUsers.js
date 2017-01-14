@@ -76,6 +76,7 @@ postEthereumUserRoute.post(function (req, res) {
             ethereumUser.userContactNumber = req.body.userContactNumber;
             ethereumUser.userPassword = password.createHash(req.body.userPassword);
             ethereumUser.userEthereumId = req.body.userEthereumId;
+            ethereumUser.ethereumUserApplicationToken = Math.floor(Math.random() * 900000) + 100000;
             ethereumUser.userProfileStatus = 1;
 
             ethereumUser.save(function (err) {

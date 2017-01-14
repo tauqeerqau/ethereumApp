@@ -1,1 +1,1 @@
-user Code
+authentication code
