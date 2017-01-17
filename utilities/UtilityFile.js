@@ -25,5 +25,20 @@ UtilityFile.prototype.validateEmail = function (email) {
     return re.test(email);
 }
 
+UtilityFile.prototype.checkIfElementExistsInArray = function (numberArray,number) {
+    console.log(numberArray);
+        console.log(numberArray[0].userContactNumber);
+    for(var iNumberCount = 0;iNumberCount<numberArray.length;iNumberCount++)
+    {
+        if(numberArray[iNumberCount].userContactNumber==number)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
 module.exports = UtilityFile;
 

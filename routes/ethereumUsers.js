@@ -8,7 +8,7 @@ var fs = require("fs");
 
 var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
-
+var EthereumUserContactSyncing = require('./../models/EthereumUserContactSyncing');
 
 var multipartMiddleware = multipart();
 
@@ -18,6 +18,7 @@ var postEthereumUserLoginRoute = router.route('/ethereumUserLogin');
 var postEthereumUserMobileRoute = router.route('/ethereumUserMobileChange');
 var postEthereumUserCompleteProfileRoute = router.route('/ethereumUserCompleteProfile');
 var postEthereumUserMobileCodeRoute = router.route('/ethereumUserMobileCode');
+var postEthereumUserSyncContactsRoute = router.route('/ethereumUserSyncContacts');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -38,6 +39,11 @@ var response = new Response(
     });
 
 var serverMessage = new ServerMessage(
+    {
+
+    });
+
+var ethereumUserContactSyncing = new EthereumUserContactSyncing(
     {
 
     });
@@ -347,6 +353,25 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                     });
                 }
             });
+        }
+    });
+});
+
+postEthereumUserSyncContactsRoute.post(function (req, res) {
+    var arrayToSend = [];
+    var arrayOfNumbers = JSON.parse(req.body.mobileNumberList);
+    EthereumUser.find({}, 'userContactNumber', { sort: { '_id': -1 } }, function (err, ethereumUsersContactNumber) {
+        if (err) {
+
+        }
+        else {
+            for (var iNumberCount = 0; iNumberCount < arrayOfNumbers.length; iNumberCount++) {
+                    ethereumUserContactSyncing = new EthereumUserContactSyncing();
+                    ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount];
+                    ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount]);;
+                    arrayToSend.push(ethereumUserContactSyncing);
+            }
+            res.json(arrayToSend);
         }
     });
 });
