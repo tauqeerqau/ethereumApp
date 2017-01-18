@@ -329,8 +329,8 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: '7801890b-44da-4bb4-8ef0-1b1baeacb6ab',
-                                secret: 'Vq9BUqy2KUGBWTNhRJIMJg=='
+                                key: 'd72431d1-ee14-4a5e-b320-d4fd764aba16',
+                                secret: '99m4WCySKUeQqMr69hKSGQ=='
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
@@ -340,6 +340,11 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                                 var status = sinchSms.getStatus(resp.messageId);
                                 res.json(response);
                             }).fail(function (error) {
+                                response.message = "User Mobile Code is not Sent";
+                                response.code = serverMessage.returnFailure();
+                                response.data = error;
+                                var status = sinchSms.getStatus(resp.messageId);
+                                res.json(response);
                                 // Some type of error, see error object
                                 console.log(error);
                             });
@@ -359,8 +364,8 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: '7801890b-44da-4bb4-8ef0-1b1baeacb6ab',
-                                secret: 'Vq9BUqy2KUGBWTNhRJIMJg=='
+                                key: 'd72431d1-ee14-4a5e-b320-d4fd764aba16',
+                                secret: '99m4WCySKUeQqMr69hKSGQ=='
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
@@ -370,6 +375,12 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                                 var status = sinchSms.getStatus(resp.messageId);
                                 res.json(response);
                             }).fail(function (error) {
+                                //All good, response contains messageId
+                                response.message = "User Mobile Code is not Sent";
+                                response.code = serverMessage.returnFailure();
+                                response.data = error;
+                                var status = sinchSms.getStatus(resp.messageId);
+                                res.json(response);
                                 // Some type of error, see error object
                                 console.log(error);
                             });
