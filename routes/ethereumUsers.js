@@ -343,7 +343,6 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                                 response.message = "User Mobile Code is not Sent";
                                 response.code = serverMessage.returnFailure();
                                 response.data = error;
-                                var status = sinchSms.getStatus(resp.messageId);
                                 res.json(response);
                                 // Some type of error, see error object
                                 console.log(error);
@@ -379,7 +378,6 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                                 response.message = "User Mobile Code is not Sent";
                                 response.code = serverMessage.returnFailure();
                                 response.data = error;
-                                var status = sinchSms.getStatus(resp.messageId);
                                 res.json(response);
                                 // Some type of error, see error object
                                 console.log(error);
