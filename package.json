@@ -16,6 +16,9 @@
     "multer": "^1.2.1",
     "node-uuid": "^1.4.7",
     "serve-favicon": "~2.3.0",
+    "sinch-auth": "0.0.1",
+    "sinch-messaging": "0.0.1",
+    "sinch-sms": "0.0.8",
     "twilio": "^2.11.1"
   }
 }

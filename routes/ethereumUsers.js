@@ -5,6 +5,8 @@ var bodyParser = require('body-parser');
 var multipart = require('connect-multiparty');
 var uuid = require('node-uuid');
 var fs = require("fs");
+var sinchAuth = require('sinch-auth');
+var sinchSms = require('sinch-messaging');
 
 var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
@@ -326,10 +328,21 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             res.json(response);
                         }
                         else {
-                            response.message = "User Mobile Code is Saved";
-                            response.code = serverMessage.returnSuccess();
-                            response.data = etherUserMobileCode;
-                            res.json(response);
+                            var sinchSms = require('sinch-sms')({
+                                key: '7801890b-44da-4bb4-8ef0-1b1baeacb6ab',
+                                secret: 'Vq9BUqy2KUGBWTNhRJIMJg=='
+                            });
+                            sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
+                                //All good, response contains messageId
+                                response.message = "User Mobile Code is Saved";
+                                response.code = serverMessage.returnSuccess();
+                                response.data = etherUserMobileCode;
+                                var status = sinchSms.getStatus(resp.messageId);
+                                res.json(response);
+                            }).fail(function (error) {
+                                // Some type of error, see error object
+                                console.log(error);
+                            });
                         }
                     });
                 }
@@ -345,10 +358,21 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             res.json(response);
                         }
                         else {
-                            response.message = "User Mobile Code is Saved";
-                            response.code = serverMessage.returnSuccess();
-                            response.data = etherUserMobileCode;
-                            res.json(response);
+                            var sinchSms = require('sinch-sms')({
+                                key: '7801890b-44da-4bb4-8ef0-1b1baeacb6ab',
+                                secret: 'Vq9BUqy2KUGBWTNhRJIMJg=='
+                            });
+                            sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
+                                //All good, response contains messageId
+                                response.message = "User Mobile Code is Sent";
+                                response.code = serverMessage.returnSuccess();
+                                response.data = etherUserMobileCode;
+                                var status = sinchSms.getStatus(resp.messageId);
+                                res.json(response);
+                            }).fail(function (error) {
+                                // Some type of error, see error object
+                                console.log(error);
+                            });
                         }
                     });
                 }
@@ -366,12 +390,15 @@ postEthereumUserSyncContactsRoute.post(function (req, res) {
         }
         else {
             for (var iNumberCount = 0; iNumberCount < arrayOfNumbers.length; iNumberCount++) {
-                    ethereumUserContactSyncing = new EthereumUserContactSyncing();
-                    ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount];
-                    ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount]);;
-                    arrayToSend.push(ethereumUserContactSyncing);
+                ethereumUserContactSyncing = new EthereumUserContactSyncing();
+                ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount];
+                ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount]);;
+                arrayToSend.push(ethereumUserContactSyncing);
             }
-            res.json(arrayToSend);
+            response.message = "Mobile Numbers are Synced";
+            response.code = serverMessage.returnSuccess();
+            response.data = arrayToSend;
+            res.json(response);
         }
     });
 });
