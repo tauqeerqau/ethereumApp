@@ -329,8 +329,9 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: 'd72431d1-ee14-4a5e-b320-d4fd764aba16',
-                                secret: '99m4WCySKUeQqMr69hKSGQ=='
+                                key: '3ce37bf2-7163-4ad8-b2c5-94ee0f24c27d',
+                                secret: 'N2MbQOc+bU6zwHvAqQmEfw=='
+
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
@@ -363,8 +364,8 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: 'd72431d1-ee14-4a5e-b320-d4fd764aba16',
-                                secret: '99m4WCySKUeQqMr69hKSGQ=='
+                                key: '3ce37bf2-7163-4ad8-b2c5-94ee0f24c27d',
+                                secret: 'N2MbQOc+bU6zwHvAqQmEfw=='
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
