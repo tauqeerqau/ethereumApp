@@ -329,7 +329,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: 'd824db9e-2bb4-44a2bac8-794d588266bf',
+                                key: 'd824db9e-2bb4-44a2-bac8-794d588266bf',
                                 secret: 'p1t0qPjgZ0agrzHk/FdguQ=='
 
                             });
@@ -364,7 +364,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: 'd824db9e-2bb4-44a2bac8-794d588266bf',
+                                key: 'd824db9e-2bb4-44a2-bac8-794d588266bf',
                                 secret: 'p1t0qPjgZ0agrzHk/FdguQ=='
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
