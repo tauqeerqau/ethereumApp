@@ -318,7 +318,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                 if (ethereumUserMobileCode == null) {
                     ethereumUserMobileCode = new EthereumUserMobileCode();
                     ethereumUserMobileCode.userName = req.body.userName;
-                    ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
+                    ethereumUserMobileCode.userContactNumber = '+'+ req.body.userContactNumber;
                     ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 9000) + 1000;
                     ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
                         if (err) {
@@ -331,7 +331,6 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             var sinchSms = require('sinch-sms')({
                                 key: 'd824db9e-2bb4-44a2-bac8-794d588266bf',
                                 secret: 'p1t0qPjgZ0agrzHk/FdguQ=='
-
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
@@ -353,7 +352,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                 }
                 else {
                     ethereumUserMobileCode.userName = req.body.userName;
-                    ethereumUserMobileCode.userContactNumber = req.body.userContactNumber;
+                    ethereumUserMobileCode.userContactNumber = '+'+ req.body.userContactNumber;
                     ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 9000) + 1000;
                     ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
                         if (err) {
