@@ -1,1 +1,1 @@
-Sinch Int 1
+chat 1

@@ -3,6 +3,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
     <script>
+  
     var socket = io().connect('http://localhost:3000/');
 
     socket.on('connect', function () {
@@ -60,6 +61,12 @@
             $('#requestDatasend').click(function () {
                 var message = $('#requestData').val();
                 $('#requestData').val('');
+                var data = new Object();
+            data.messageType = 200;
+            data.messageText = "100";
+            data._conversationId = '588ef8a01eea4f2c0caf1b1e';
+            data._messageToUserId = '587a63e9f4a8f119d8ee9db8';
+            data._messageFromUserId = '587a63e9f4a8f119d8ee9db8';
                 socket.emit('sendRequestchat', message);
             });
 
@@ -102,5 +109,26 @@
 <input id="roomname" style="width:200px;" />
 <input type="button" id="roombutton" value="create room" />
 </div>
+<input type="file" id="files" />
+<img id="image" />
 ... // the rest of your page
+<script>
+var socket = io().connect('http://localhost:3000/');
+ document.getElementById("files").onchange = function () {
+    var reader = new FileReader();
+    var extension = "";
+    reader.onload = function (e) {
+        // get loaded data and render thumbnail.
+        var data = new Object();
+        data.Image = e.target.result;
+        data.extension = extension;
+        socket.emit('sendImage', data);
+        document.getElementById("image").src = e.target.result;
+    };
+    // read the image file as a data URL.
+    //reader.readAsDataURL(this.files[0]);
+    var extension = this.files[0].name.split('.').pop().toLowerCase();
+    reader.readAsArrayBuffer(this.files[0]);
+};
+</script>
 </body>

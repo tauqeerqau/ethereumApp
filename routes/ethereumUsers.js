@@ -261,6 +261,7 @@ postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, re
                     var file = __dirname + "./../public/images/" + imageName;
                     fs.readFile(req.files.file.path, function (err, data) {
                         fs.writeFile(file, data, function (err) {
+                            console.log(data);
                             if (err) {
                                 console.log(err);
                             } else {

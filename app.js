@@ -1,4 +1,5 @@
 var app = require('express')();
+var uuid = require('node-uuid');
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -7,6 +8,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var multipart = require('connect-multiparty');
 var multer = require('multer');
+var fs = require("fs");
 // sever object
 var server = require('http').Server(app);
 //
@@ -142,29 +144,52 @@ io.sockets.on('connection', function (client) {
 
   });
   client.on('sendchat', function (data) {//IOS will send Room Name
+    console.log(data);
     var conversationMessage = new ConversationMessages();
     conversationMessage.messageType = data.messageType;
     conversationMessage.messageText = data.messageText;
     conversationMessage._conversationId = data._conversationId;
     conversationMessage._messageToUserId = data._messageToUserId;
     conversationMessage._messageFromUserId = data._messageFromUserId;
-    conversationMessage.save(function(err,conMes)
-    {
-      if(conMes == null)
-      {
+    conversationMessage.save(function (err, conMes) {
+      if (conMes == null) {
 
       }
-      else
-      {
+      else {
 
       }
     });
     io.sockets["in"](client.room).emit('updatechat', client.username, data);
   });
+  client.on('sendImage', function (data) {//IOS will send Room Name
+    console.log(data.Image);
+    console.log(__dirname);
+      var extension = data.extension;
+      var imageName = uuid.v4() + extension;
+      var file = __dirname + "//public/images/" + imageName+'.'+extension;
+        fs.writeFile(file, data.Image, function (err) {
+          if (err) {
+            console.log(err);
+          } else {
+            
+          }
+        });
+  });
   client.on('sendRequestchat', function (data) {//IOS will send Room Name
-    //message, userIdTo, userIdFrom, _conversationId, 
-    //console.log(data.messageText);
-    //client.emit('updatechat', 'April App', data.messageText);
+    var conversationMessage = new ConversationMessages();
+    conversationMessage.messageType = data.messageType;
+    conversationMessage.messageText = data.messageText;
+    conversationMessage._conversationId = data._conversationId;
+    conversationMessage._messageToUserId = data._messageToUserId;
+    conversationMessage._messageFromUserId = data._messageFromUserId;
+    conversationMessage.save(function (err, conMes) {
+      if (conMes == null) {
+
+      }
+      else {
+
+      }
+    });
     io.sockets["in"](client.room).emit('updatechat', client.username, data);
   });
   client.on('switchRoom', function (newroom) {
