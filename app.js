@@ -68,10 +68,7 @@ var rooms = [];
 var usernames = [];
 var io = require('socket.io')(server);
 io.sockets.on('connection', function (client) {
-  client.on('create', function (roomName) {//IOS will send Room Name
-    function isBigEnough(roomName) {
-      return roomName;
-    }
+  client.on('createRoom', function (roomName) {//Mobile App will send Room Name
     var flag = false;
     for (var i = 0; i < rooms.length; i++) {
       if (rooms[i] == roomName) {

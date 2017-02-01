@@ -9,12 +9,14 @@ var mongoose = require('mongoose');
 var UserSchema   = new mongoose.Schema({
     userName: String,
     userEmail: String,
+    userFullName: String,
     userContactNumber: String,
     userPassword: String,
     userEthereumId: String,
     userProfileStatus: Number,
     userAddress: String,
     userOccupation: String,
+    userAddress: String,
     userProfilePictureURL: String,
     ethereumUserApplicationToken: String
 });

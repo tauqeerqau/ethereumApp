@@ -248,6 +248,8 @@ postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, re
             if (ethereumUser != null) {
                 ethereumUser.userOccupation = req.body.userOccupation;
                 ethereumUser.userAddress = req.body.userAddress;
+                ethereumUser.userFullName = req.body.userFullName;
+                ethereumUser.userEmail = req.body.userEmail;
                 if (req.files.file != null) {
                     var extension = "";
                     if (req.files.file.headers['content-type'] == 'image/jpeg') {
@@ -319,7 +321,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                 if (ethereumUserMobileCode == null) {
                     ethereumUserMobileCode = new EthereumUserMobileCode();
                     ethereumUserMobileCode.userName = req.body.userName;
-                    ethereumUserMobileCode.userContactNumber = '+'+ req.body.userContactNumber;
+                    ethereumUserMobileCode.userContactNumber = '+' + req.body.userContactNumber;
                     ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 9000) + 1000;
                     ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
                         if (err) {
@@ -353,7 +355,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                 }
                 else {
                     ethereumUserMobileCode.userName = req.body.userName;
-                    ethereumUserMobileCode.userContactNumber = '+'+ req.body.userContactNumber;
+                    ethereumUserMobileCode.userContactNumber = '+' + req.body.userContactNumber;
                     ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 9000) + 1000;
                     ethereumUserMobileCode.save(function (err, etherUserMobileCode) {
                         if (err) {
@@ -399,13 +401,12 @@ postEthereumUserSyncContactsRoute.post(function (req, res) {
 
         }
         else {
-            {
+            for (var iNumberCount = 0; iNumberCount < arrayOfNumbers.length; iNumberCount++) {
                 ethereumUserContactSyncing = new EthereumUserContactSyncing();
                 ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount];
                 ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount]);
-                if(ethereumUserContactSyncing.doesNumberExist == true)
-                {
-					arrayToSend.push(ethereumUserContactSyncing.userContactNumber);
+                if (ethereumUserContactSyncing.doesNumberExist == true) {
+                    arrayToSend.push(ethereumUserContactSyncing.userContactNumber);
                 }
             }
             response.message = "Mobile Numbers are Synced";

@@ -1,1 +1,1 @@
-chat 1
+profile missing parameters
