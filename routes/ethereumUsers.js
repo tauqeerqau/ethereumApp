@@ -399,11 +399,14 @@ postEthereumUserSyncContactsRoute.post(function (req, res) {
 
         }
         else {
-            for (var iNumberCount = 0; iNumberCount < arrayOfNumbers.length; iNumberCount++) {
+            {
                 ethereumUserContactSyncing = new EthereumUserContactSyncing();
                 ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount];
-                ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount]);;
-                arrayToSend.push(ethereumUserContactSyncing);
+                ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount]);
+                if(ethereumUserContactSyncing.doesNumberExist == true)
+                {
+					arrayToSend.push(ethereumUserContactSyncing.userContactNumber);
+                }
             }
             response.message = "Mobile Numbers are Synced";
             response.code = serverMessage.returnSuccess();
