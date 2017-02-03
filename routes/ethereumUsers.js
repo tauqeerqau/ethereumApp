@@ -421,16 +421,8 @@ postEthereumUserSyncContactsRoute.post(function (req, res) {
 postEthereumUserMobileNumberSyncRoute.post(function (req, res) {
     console.log(req.body.userName);
     console.log(req.body.authToken);
-    var mc = req.body.mobileNumberList;
-    for(var i=0;i<mc.length;i++)
-    {
-        var mcc = mc[i];
-        console.log(mcc.m);
-        console.log(mcc.c);
-    }
     var arrayToSend = [];
-    var arrayOfNumbers = req.body.mobileNumberList;
-    console.log(arrayOfNumbers);
+    var arrayOfNumbers = JSON.parse(req.body.mobileNumberList);
     EthereumUser.find({}, 'userContactNumber', { sort: { '_id': -1 } }, function (err, ethereumUsersContactNumber) {
         if (err) {
 
