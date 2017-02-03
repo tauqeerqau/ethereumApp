@@ -21,6 +21,7 @@ var postEthereumUserMobileRoute = router.route('/ethereumUserMobileChange');
 var postEthereumUserCompleteProfileRoute = router.route('/ethereumUserCompleteProfile');
 var postEthereumUserMobileCodeRoute = router.route('/ethereumUserMobileCode');
 var postEthereumUserSyncContactsRoute = router.route('/ethereumUserSyncContacts');
+var postEthereumUserMobileNumberSyncRoute = router.route('/ethereumUserMobileNumberSync');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -407,6 +408,40 @@ postEthereumUserSyncContactsRoute.post(function (req, res) {
                 ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount]);
                 if (ethereumUserContactSyncing.doesNumberExist == true) {
                     arrayToSend.push(ethereumUserContactSyncing.userContactNumber);
+                }
+            }
+            response.message = "Mobile Numbers are Synced";
+            response.code = serverMessage.returnSuccess();
+            response.data = arrayToSend;
+            res.json(response);
+        }
+    });
+});
+
+postEthereumUserMobileNumberSyncRoute.post(function (req, res) {
+    console.log(req.body.userName);
+    console.log(req.body.authToken);
+    var mc = req.body.mobileNumberList;
+    for(var i=0;i<mc.length;i++)
+    {
+        var mcc = mc[i];
+        console.log(mcc.m);
+        console.log(mcc.c);
+    }
+    var arrayToSend = [];
+    var arrayOfNumbers = req.body.mobileNumberList;
+    console.log(arrayOfNumbers);
+    EthereumUser.find({}, 'userContactNumber', { sort: { '_id': -1 } }, function (err, ethereumUsersContactNumber) {
+        if (err) {
+
+        }
+        else {
+            for (var iNumberCount = 0; iNumberCount < arrayOfNumbers.length; iNumberCount++) {
+                ethereumUserContactSyncing = new EthereumUserContactSyncing();
+                ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount].m;
+                ethereumUserContactSyncing.doesNumberExist = utility.checkIfElementExistsInArray(ethereumUsersContactNumber, arrayOfNumbers[iNumberCount].m);
+                if (ethereumUserContactSyncing.doesNumberExist == true) {
+                    arrayToSend.push(arrayOfNumbers[iNumberCount].c);
                 }
             }
             response.message = "Mobile Numbers are Synced";
