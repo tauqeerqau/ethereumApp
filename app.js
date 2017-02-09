@@ -17,8 +17,8 @@ var users = require('./routes/users');
 var ethereumUsers = require('./routes/ethereumUsers');
 
 //var app = express();
-//server.listen(3000);
-server.listen(process.env.PORT);
+server.listen(3000);
+//server.listen(process.env.PORT);
 //for socket IO page
 /*app.get('/', function (req, res) {
     res.sendfile(__dirname + '/index.html');

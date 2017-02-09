@@ -22,6 +22,9 @@ var postEthereumUserCompleteProfileRoute = router.route('/ethereumUserCompletePr
 var postEthereumUserMobileCodeRoute = router.route('/ethereumUserMobileCode');
 var postEthereumUserSyncContactsRoute = router.route('/ethereumUserSyncContacts');
 var postEthereumUserMobileNumberSyncRoute = router.route('/ethereumUserMobileNumberSync');
+var postEthereumUserAddPasscodeRoute = router.route('/ethereumUserAddPasscode');
+var postEthereumUserChangePasswordRoute = router.route('/ethereumUserChangePassword');
+var postEthereumUserChangePasscodeRoute = router.route('/ethereumUserChangePasscode');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -440,6 +443,100 @@ postEthereumUserMobileNumberSyncRoute.post(function (req, res) {
             response.code = serverMessage.returnSuccess();
             response.data = arrayToSend;
             res.json(response);
+        }
+    });
+});
+
+postEthereumUserChangePasswordRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (ethereumUser == null) {
+            response.message = "User does not Exist";
+            response.code = serverMessage.returnUserAlreadyExists();
+            response.data = ethereumUser;
+            res.json(response);
+        }
+        else {
+            var validate = password.validateHash(ethereumUser.userPassword, req.body.userOldPassword);
+            if (validate == true) {
+                ethereumUser.userPassword = password.createHash(req.body.userNewPassword);
+                ethereumUser.save(function (err) {
+                    if (err) {
+                        res.send(err);
+                    }
+                    else {
+                        response.message = "User Password Updated Successfully";
+                        response.code = serverMessage.returnSuccess();;
+                        response.data = ethereumUser;
+                        res.json(response);
+                    }
+                });
+
+            }
+            else {
+                response.message = "User Old Password is incorrect";
+                response.code = serverMessage.returnPasswordMissMatch();
+                response.data = null;
+                res.json(response);
+            }
+        }
+    });
+});
+
+postEthereumUserAddPasscodeRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (ethereumUser == null) {
+            response.message = "User does not Exist";
+            response.code = serverMessage.returnUserAlreadyExists();
+            response.data = ethereumUser;
+            res.json(response);
+        }
+        else {
+            ethereumUser.ethereumUserPasscode = req.body.passcode;
+            ethereumUser.save(function (err) {
+                if (err) {
+                    res.send(err);
+                }
+                else {
+                    response.message = "User Passcode Added Successfully";
+                    response.code = serverMessage.returnSuccess();;
+                    response.data = ethereumUser;
+                    res.json(response);
+                }
+            });
+        }
+    });
+});
+
+postEthereumUserChangePasscodeRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (ethereumUser == null) {
+            response.message = "User does not Exist";
+            response.code = serverMessage.returnUserAlreadyExists();
+            response.data = ethereumUser;
+            res.json(response);
+        }
+        else {
+            if (ethereumUser.ethereumUserPasscode == req.body.oldPasscode) {
+                ethereumUser.ethereumUserPasscode = req.body.newPasscode;
+                ethereumUser.save(function (err) {
+                    if (err) {
+                        res.send(err);
+                    }
+                    else {
+                        response.message = "User Passcode Updated Successfully";
+                        response.code = serverMessage.returnSuccess();;
+                        response.data = ethereumUser;
+                        res.json(response);
+                    }
+                });
+
+            }
+            else {
+                response.message = "User Old Passcode is incorrect";
+                response.code = serverMessage.returnPasswordMissMatch();
+                response.data = null;
+                res.json(response);
+            }
         }
     });
 });
