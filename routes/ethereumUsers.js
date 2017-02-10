@@ -7,10 +7,12 @@ var uuid = require('node-uuid');
 var fs = require("fs");
 var sinchAuth = require('sinch-auth');
 var sinchSms = require('sinch-messaging');
+var dateTime = require('node-datetime');
 
 var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
 var EthereumUserContactSyncing = require('./../models/EthereumUserContactSyncing');
+var EthereumUserMobileDevices = require('./../models/EthereumUserMobileDevices');
 
 var multipartMiddleware = multipart();
 
@@ -25,6 +27,7 @@ var postEthereumUserMobileNumberSyncRoute = router.route('/ethereumUserMobileNum
 var postEthereumUserAddPasscodeRoute = router.route('/ethereumUserAddPasscode');
 var postEthereumUserChangePasswordRoute = router.route('/ethereumUserChangePassword');
 var postEthereumUserChangePasscodeRoute = router.route('/ethereumUserChangePasscode');
+var postEthereumUsersLoginListWithDevicesRoute = router.route('/ethereumUsersLoginListWithDevices');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -96,10 +99,27 @@ postEthereumUserRoute.post(function (req, res) {
                     res.send(err);
                 }
                 else {
-                    response.message = "User Added Successfully";
-                    response.code = serverMessage.returnSuccess();;
-                    response.data = ethereumUser;
-                    res.json(response);
+                    var ethereumUserMobileDevices = new EthereumUserMobileDevices();
+                    ethereumUserMobileDevices.userName = ethereumUser.userName;
+                    ethereumUserMobileDevices._userId = ethereumUser._id;
+                    ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
+                    ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
+                    ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                    ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                    var dt = dateTime.create();
+                    var formatted = dt.format('Y-m-d H:M:S');
+                    ethereumUserMobileDevices.userLastLoginTime = formatted;
+                    ethereumUserMobileDevices.save(function (err) {
+                        if (err) {
+
+                        }
+                        else {
+                            response.message = "User Added Successfully";
+                            response.code = serverMessage.returnSuccess();;
+                            response.data = ethereumUser;
+                            res.json(response);
+                        }
+                    });
                 }
             });
 
@@ -139,10 +159,27 @@ postEthereumUserLoginRoute.post(function (req, res) {
                 if (ethereumUser != null) {
                     var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
                     if (validate == true) {
-                        response.message = "User Login is Successful";
-                        response.code = serverMessage.returnSuccess();;
-                        response.data = ethereumUser;
-                        res.json(response);
+                        var ethereumUserMobileDevices = new EthereumUserMobileDevices();
+                        ethereumUserMobileDevices.userName = ethereumUser.userName;
+                        ethereumUserMobileDevices._userId = ethereumUser._id;
+                        ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
+                        ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
+                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                        var dt = dateTime.create();
+                        var formatted = dt.format('Y-m-d H:M:S');
+                        ethereumUserMobileDevices.userLastLoginTime = formatted;
+                        ethereumUserMobileDevices.save(function (err) {
+                            if (err) {
+
+                            }
+                            else {
+                                response.message = "User Login is Successful";
+                                response.code = serverMessage.returnSuccess();;
+                                response.data = ethereumUser;
+                                res.json(response);
+                            }
+                        });
                     }
                     else {
                         response.message = "User Password is incorrect";
@@ -169,10 +206,27 @@ postEthereumUserLoginRoute.post(function (req, res) {
                 if (ethereumUser != null) {
                     var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
                     if (validate == true) {
-                        response.message = "User Login is Successful";
-                        response.code = serverMessage.returnSuccess();;
-                        response.data = ethereumUser;
-                        res.json(response);
+                        var ethereumUserMobileDevices = new EthereumUserMobileDevices();
+                        ethereumUserMobileDevices.userName = ethereumUser.userName;
+                        ethereumUserMobileDevices._userId = ethereumUser._id;
+                        ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
+                        ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
+                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                        var dt = dateTime.create();
+                        var formatted = dt.format('Y-m-d H:M:S');
+                        ethereumUserMobileDevices.userLastLoginTime = formatted;
+                        ethereumUserMobileDevices.save(function (err) {
+                            if (err) {
+
+                            }
+                            else {
+                                response.message = "User Login is Successful";
+                                response.code = serverMessage.returnSuccess();;
+                                response.data = ethereumUser;
+                                res.json(response);
+                            }
+                        });
                     }
                     else {
                         response.message = "User Password is incorrect";
@@ -539,6 +593,22 @@ postEthereumUserChangePasscodeRoute.post(function (req, res) {
             }
         }
     });
+});
+
+postEthereumUsersLoginListWithDevicesRoute.post(function(req,res){
+    EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: {userLastLoginTime: 'descending'} }, function (err, ethereumUserMobileDevices) {
+        if(err)
+        {
+
+        }
+        else
+        {
+            response.message = "User's Login Details";
+            response.code = serverMessage.returnSuccess();
+            response.data = ethereumUserMobileDevices;
+            res.json(response);
+        }
+    }).limit(5);
 });
 
 module.exports = router;
