@@ -105,7 +105,7 @@ postEthereumUserRoute.post(function (req, res) {
                     ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
                     ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
                     ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
-                    ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                    ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
                     var dt = dateTime.create();
                     var formatted = dt.format('Y-m-d H:M:S');
                     ethereumUserMobileDevices.userLastLoginTime = formatted;
@@ -165,7 +165,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
                         ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
                         ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
-                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                        ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
                         var dt = dateTime.create();
                         var formatted = dt.format('Y-m-d H:M:S');
                         ethereumUserMobileDevices.userLastLoginTime = formatted;
@@ -212,7 +212,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
                         ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
                         ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
-                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                        ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
                         var dt = dateTime.create();
                         var formatted = dt.format('Y-m-d H:M:S');
                         ethereumUserMobileDevices.userLastLoginTime = formatted;
