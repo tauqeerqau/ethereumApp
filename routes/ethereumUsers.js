@@ -28,11 +28,13 @@ var postEthereumUserAddPasscodeRoute = router.route('/ethereumUserAddPasscode');
 var postEthereumUserChangePasswordRoute = router.route('/ethereumUserChangePassword');
 var postEthereumUserChangePasscodeRoute = router.route('/ethereumUserChangePasscode');
 var postEthereumUsersLoginListWithDevicesRoute = router.route('/ethereumUsersLoginListWithDevices');
+var postEthereumUsersChangePasscodeStatusRoute = router.route('/ethereumUsersChangePasscodeStatus');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
 var Response = require('./../utilities/response');
 var ServerMessage = require('./../utilities/ServerMessages');
+var PasscodeStatus = require('./../utilities/PasscodeStatuses');
 
 var utility = new Utility(
     {
@@ -51,6 +53,12 @@ var serverMessage = new ServerMessage(
     {
 
     });
+
+var passcodeStatus = new PasscodeStatus(
+    {
+
+    }
+);
 
 var ethereumUserContactSyncing = new EthereumUserContactSyncing(
     {
@@ -93,7 +101,7 @@ postEthereumUserRoute.post(function (req, res) {
             ethereumUser.userEthereumId = req.body.userEthereumId;
             ethereumUser.ethereumUserApplicationToken = Math.floor(Math.random() * 900000) + 100000;
             ethereumUser.userProfileStatus = 1;
-			ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnNotSet();
+            ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnNotSet();
             ethereumUser.save(function (err) {
                 if (err) {
                     res.send(err);
@@ -595,20 +603,54 @@ postEthereumUserChangePasscodeRoute.post(function (req, res) {
     });
 });
 
-postEthereumUsersLoginListWithDevicesRoute.post(function(req,res){
-    EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: {userLastLoginTime: 'descending'} }, function (err, ethereumUserMobileDevices) {
-        if(err)
-        {
+postEthereumUsersLoginListWithDevicesRoute.post(function (req, res) {
+    EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
+        if (err) {
 
         }
-        else
-        {
+        else {
             response.message = "User's Login Details";
             response.code = serverMessage.returnSuccess();
             response.data = ethereumUserMobileDevices;
             res.json(response);
         }
     }).limit(5);
+});
+
+postEthereumUsersChangePasscodeStatusRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (err) {
+            response.message = "Error in Getting User Details";
+            response.code = serverMessage.returnFailure();
+            response.data = null;
+            res.json(response);
+        }
+        else {
+            if (ethereumUser == null) {
+                response.message = "User does not Exist";
+                response.code = serverMessage.returnNotFound();
+                response.data = null;
+                res.json(response);
+            }
+            else {
+                if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnNotSet()) {
+                    ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOn();
+                }
+                else if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnPasscodeOff()) {
+                    ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOn();
+                }
+                else if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnPasscodeOn()) {
+                    ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
+                }
+                ethereumUser.save(function (err) {
+                    response.message = "Passcode status updated Successfully";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = ethereumUser;
+                    res.json(response);
+                });
+            }
+        }
+    });
 });
 
 module.exports = router;

@@ -20,7 +20,7 @@ var UserSchema   = new mongoose.Schema({
     userProfilePictureURL: String,
     ethereumUserApplicationToken: String,
     ethereumUserPasscode:String,
-	ethereumUserPasscodeStatus: Number
+    ethereumUserPasscodeStatus: Number
 });
 
 // Export the Mongoose model

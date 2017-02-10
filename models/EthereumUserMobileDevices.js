@@ -11,8 +11,8 @@ var EthereumUserMobileDevicesSchema   = new mongoose.Schema({
     _userId: String,
     userMobileUniqueId: String,
     userMobileOSName: String,
+    userDeviceName: String,
     userMobileOSVersion: String,
-	userDeviceName: String,
     userLastLoginTime: String
 });
 
