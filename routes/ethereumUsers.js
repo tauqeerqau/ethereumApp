@@ -182,10 +182,18 @@ postEthereumUserLoginRoute.post(function (req, res) {
 
                             }
                             else {
-                                response.message = "User Login is Successful";
-                                response.code = serverMessage.returnSuccess();;
-                                response.data = ethereumUser;
-                                res.json(response);
+                                EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
+                                    if (err) {
+
+                                    }
+                                    else {
+                                        response.message = "User's Login  is Successfull";
+                                        response.code = serverMessage.returnSuccess();
+                                        ethereumUser.ethereumUserLoginDetail = ethereumUserMobileDevices; 
+                                        response.data = ethereumUser;
+                                        res.json(response);
+                                    }
+                                }).limit(5);
                             }
                         });
                     }
@@ -229,10 +237,18 @@ postEthereumUserLoginRoute.post(function (req, res) {
 
                             }
                             else {
-                                response.message = "User Login is Successful";
-                                response.code = serverMessage.returnSuccess();;
-                                response.data = ethereumUser;
-                                res.json(response);
+                                EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
+                                    if (err) {
+
+                                    }
+                                    else {
+                                        response.message = "User's Login is Successfull";
+                                        response.code = serverMessage.returnSuccess();
+                                        ethereumUser.ethereumUserLoginDetail = ethereumUserMobileDevices; 
+                                        response.data = ethereumUser;
+                                        res.json(response);
+                                    }
+                                }).limit(5);
                             }
                         });
                     }
