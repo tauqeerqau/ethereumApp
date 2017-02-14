@@ -21,7 +21,9 @@ var UserSchema   = new mongoose.Schema({
     ethereumUserApplicationToken: String,
     ethereumUserPasscode:String,
     ethereumUserPasscodeStatus: Number,
-    ethereumUserLoginDetail: Object
+    ethereumUserLoginDetail: Object,
+    ethereumUserDoubleAuthenticationMode: Number,
+    ethereumUserNotificationStatus: Number
 });
 
 // Export the Mongoose model

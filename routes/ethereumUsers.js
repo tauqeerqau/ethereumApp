@@ -31,6 +31,8 @@ var postEthereumUserChangePasswordRoute = router.route('/ethereumUserChangePassw
 var postEthereumUserChangePasscodeRoute = router.route('/ethereumUserChangePasscode');
 var postEthereumUsersLoginListWithDevicesRoute = router.route('/ethereumUsersLoginListWithDevices');
 var postEthereumUsersChangePasscodeStatusRoute = router.route('/ethereumUsersChangePasscodeStatus');
+var postEthereumUsersChangeDoubleAuthenticationRoute = router.route('/ethereumUsersChangeDoubleAuthentication');
+var postEthereumUsersChangeNotificationStatusRoute = router.route('/ethereumUsersChangeNotificationStatus');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -104,6 +106,8 @@ postEthereumUserRoute.post(function (req, res) {
             ethereumUser.ethereumUserApplicationToken = Math.floor(Math.random() * 900000) + 100000;
             ethereumUser.userProfileStatus = 1;
             ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnNotSet();
+            ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
+            ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
             ethereumUser.save(function (err) {
                 if (err) {
                     res.send(err);
@@ -680,17 +684,79 @@ postEthereumUsersChangePasscodeStatusRoute.post(function (req, res) {
 });
 
 getAboutTextRoute.get(function (req, res) {
-    response.message = "I am About Text";
-    response.code = serverMessage.returnSuccess();
-    response.data = "I am About text for your app.";
-    res.json(response);
+    res.json("<b>I am about Text");
 });
 
 getTermsAndConditionsTextRoute.get(function (req, res) {
-    response.message = "I am Terms And Conditions of your App";
-    response.code = serverMessage.returnSuccess();
-    response.data = "I am Terms And Conditions of your App.I am Terms And Conditions of your App.";
-    res.json(response);
+    res.json("<b>I am Terms & Conditions Text");
+});
+
+postEthereumUsersChangeDoubleAuthenticationRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (err) {
+            response.message = "Error in Getting User Details";
+            response.code = serverMessage.returnFailure();
+            response.data = null;
+            res.json(response);
+        }
+        else {
+            if (ethereumUser == null) {
+                response.message = "User does not Exist";
+                response.code = serverMessage.returnNotFound();
+                response.data = null;
+                res.json(response);
+            }
+            else {
+                
+                if(ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOff()) {
+                    ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOn();
+                }
+                else if (ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOn()) {
+                    ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
+                }
+                ethereumUser.save(function (err) {
+                    response.message = "Double Authentication Mode Updated Successfully";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = ethereumUser;
+                    res.json(response);
+                });
+            }
+        }
+    });
+});
+
+postEthereumUsersChangeNotificationStatusRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (err) {
+            response.message = "Error in Getting User Details";
+            response.code = serverMessage.returnFailure();
+            response.data = null;
+            res.json(response);
+        }
+        else {
+            if (ethereumUser == null) {
+                response.message = "User does not Exist";
+                response.code = serverMessage.returnNotFound();
+                response.data = null;
+                res.json(response);
+            }
+            else {
+                
+                if(ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOff()) {
+                    ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
+                }
+                else if (ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOn()) {
+                    ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOff();
+                }
+                ethereumUser.save(function (err) {
+                    response.message = "Double Authentication Mode Updated Successfully";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = ethereumUser;
+                    res.json(response);
+                });
+            }
+        }
+    });
 });
 
 module.exports = router;
