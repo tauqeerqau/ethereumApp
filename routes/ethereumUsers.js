@@ -189,7 +189,11 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                     else {
                                         response.message = "User's Login  is Successfull";
                                         response.code = serverMessage.returnSuccess();
-                                        ethereumUser.ethereumUserLoginDetail = ethereumUserMobileDevices; 
+                                        var devicesNames = [];
+                                        ethereumUserMobileDevices.forEach(function(element) {
+                                            devicesNames.push(element.userDeviceName);
+                                        }, this);
+                                        ethereumUser.ethereumUserLoginDetail = devicesNames; 
                                         response.data = ethereumUser;
                                         res.json(response);
                                     }
@@ -244,7 +248,11 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                     else {
                                         response.message = "User's Login is Successfull";
                                         response.code = serverMessage.returnSuccess();
-                                        ethereumUser.ethereumUserLoginDetail = ethereumUserMobileDevices; 
+                                        var devicesNames = [];
+                                        ethereumUserMobileDevices.forEach(function(element) {
+                                            devicesNames.push(element.userDeviceName);
+                                        }, this);
+                                        ethereumUser.ethereumUserLoginDetail = devicesNames;
                                         response.data = ethereumUser;
                                         res.json(response);
                                     }
