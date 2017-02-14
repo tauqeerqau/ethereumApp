@@ -18,6 +18,8 @@ var multipartMiddleware = multipart();
 
 var postEthereumUserRoute = router.route('/addEthereumUser');
 var getEthereumUserRoute = router.route('/getEthereumUsers');
+var getAboutTextRoute = router.route('/getAboutText');
+var getTermsAndConditionsTextRoute = router.route('/getTermsAndConditionsText');
 var postEthereumUserLoginRoute = router.route('/ethereumUserLogin');
 var postEthereumUserMobileRoute = router.route('/ethereumUserMobileChange');
 var postEthereumUserCompleteProfileRoute = router.route('/ethereumUserCompleteProfile');
@@ -190,10 +192,10 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                         response.message = "User's Login  is Successfull";
                                         response.code = serverMessage.returnSuccess();
                                         var devicesNames = [];
-                                        ethereumUserMobileDevices.forEach(function(element) {
+                                        ethereumUserMobileDevices.forEach(function (element) {
                                             devicesNames.push(element.userDeviceName);
                                         }, this);
-                                        ethereumUser.ethereumUserLoginDetail = devicesNames; 
+                                        ethereumUser.ethereumUserLoginDetail = devicesNames;
                                         response.data = ethereumUser;
                                         res.json(response);
                                     }
@@ -249,7 +251,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                         response.message = "User's Login is Successfull";
                                         response.code = serverMessage.returnSuccess();
                                         var devicesNames = [];
-                                        ethereumUserMobileDevices.forEach(function(element) {
+                                        ethereumUserMobileDevices.forEach(function (element) {
                                             devicesNames.push(element.userDeviceName);
                                         }, this);
                                         ethereumUser.ethereumUserLoginDetail = devicesNames;
@@ -675,6 +677,20 @@ postEthereumUsersChangePasscodeStatusRoute.post(function (req, res) {
             }
         }
     });
+});
+
+getAboutTextRoute.get(function (req, res) {
+    response.message = "I am About Text";
+    response.code = serverMessage.returnSuccess();
+    response.data = "I am About text for your app.";
+    res.json(response);
+});
+
+getTermsAndConditionsTextRoute.get(function (req, res) {
+    response.message = "I am Terms And Conditions of your App";
+    response.code = serverMessage.returnSuccess();
+    response.data = "I am Terms And Conditions of your App.I am Terms And Conditions of your App.";
+    res.json(response);
 });
 
 module.exports = router;
