@@ -584,6 +584,7 @@ postEthereumUserAddPasscodeRoute.post(function (req, res) {
         }
         else {
             ethereumUser.ethereumUserPasscode = req.body.passcode;
+			ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
             ethereumUser.save(function (err) {
                 if (err) {
                     res.send(err);
