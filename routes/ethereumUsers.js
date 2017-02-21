@@ -764,7 +764,6 @@ postEthereumUsersChangeNotificationStatusRoute.post(function (req, res) {
     });
 });
 
-getCurrencyConversionsRoute.get(function (req, res) {
 
 
     var Client = require('node-rest-client').Client;
