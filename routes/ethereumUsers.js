@@ -764,47 +764,6 @@ postEthereumUsersChangeNotificationStatusRoute.post(function (req, res) {
     });
 });
 
-
-
-    var Client = require('node-rest-client').Client;
-
-    var client = new Client();
-    var sourceCurrency = req.body.sourceCurrency;
-    var targetCurrency = req.body.targetCurrency;
-    client.get("http://api.fixer.io/latest?symbols=EUR,GBP,AUD,NZD,PHP&base=USD", function (data, response) {
-        // parsed response body as js object 
-        console.log(data);
-        // raw response 
-        console.log(response);
-        var obj = new Object();
-        obj.data = data;
-        //obj.response = response;
-
-        var exchange = require("exchange-rates"),
-            fx = require("money");
-
-        var jsonfile = require('jsonfile')
-        var file = './currency.json'
-        jsonfile.readFile(file, function (err, obj) {
-            console.dir(obj);
-            console.dir(obj);
-            obj.forEach(function (element) {
-                console.log(element.currency + " ," + element.value);
-            }, this);
-            var found = false;
-            obj.forEach(function (element) {
-                console.log(element.currency + " ," + element.value);
-            }, this);
-            for (var i = 0; i < obj.length; i++) {
-                var obj1 = obj[i];
-                console.log(obj1.value);
-                console.log(obj1.currency);
-            }
-            res.json(obj);
-        })
-    });
-});
-
 postConvertGivenTwoCurrenciesRoute.post(function (req, res) {
     var sourceCurrency = req.body.sourceCurrency;
     var targetCurrency = req.body.targetCurrency;
