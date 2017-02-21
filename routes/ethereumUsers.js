@@ -779,12 +779,17 @@ postConvertGivenTwoCurrenciesRoute.post(function (req, res) {
 
 postConvertFromSourceToTargetCurrenciesRoute.post(function (req, res) {
     var sourceCurrency = req.body.sourceCurrency;
-    var jsonfile = require('jsonfile')
-    var file = './currency.json';
+    var jsonfile = require('jsonfile');
+    var fullUrl = req.protocol + '://' + req.get('host');
+    var file = __dirname + "./../public/currency.json";
     var currencyGreaterThan20 = false;
     var urlStringForFirst20 = "https://min-api.cryptocompare.com/data/price?fsym=" + sourceCurrency + "&tsyms=";
     var urlStringForNext20 = "https://min-api.cryptocompare.com/data/price?fsym=" + sourceCurrency + "&tsyms=";
     jsonfile.readFile(file, function (err, obj) {
+        if(err)
+        {
+            console.log(err);
+        }
         for (var i = 0; i < obj.length; i++) {
             var obj1 = obj[i];
             console.log(obj1.value);
