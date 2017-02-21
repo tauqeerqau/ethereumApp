@@ -7,6 +7,7 @@ var uuid = require('node-uuid');
 var fs = require("fs");
 var sinchAuth = require('sinch-auth');
 var sinchSms = require('sinch-messaging');
+var Client = require('node-rest-client').Client;
 var dateTime = require('node-datetime');
 
 var EthereumUser = require('./../models/EthereumUser');
@@ -33,6 +34,9 @@ var postEthereumUsersLoginListWithDevicesRoute = router.route('/ethereumUsersLog
 var postEthereumUsersChangePasscodeStatusRoute = router.route('/ethereumUsersChangePasscodeStatus');
 var postEthereumUsersChangeDoubleAuthenticationRoute = router.route('/ethereumUsersChangeDoubleAuthentication');
 var postEthereumUsersChangeNotificationStatusRoute = router.route('/ethereumUsersChangeNotificationStatus');
+var postConvertGivenTwoCurrenciesRoute = router.route('/convertGivenTwoCurrencies');
+var postConvertFromSourceToTargetCurrenciesRoute = router.route('/convertFromSourceToTargetCurrencies');
+
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -584,7 +588,7 @@ postEthereumUserAddPasscodeRoute.post(function (req, res) {
         }
         else {
             ethereumUser.ethereumUserPasscode = req.body.passcode;
-			ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
+            ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
             ethereumUser.save(function (err) {
                 if (err) {
                     res.send(err);
@@ -665,7 +669,7 @@ postEthereumUsersChangePasscodeStatusRoute.post(function (req, res) {
             }
             else {
                 if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnNotSet()) {
-                    ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOn();
+                    ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
                 }
                 else if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnPasscodeOff()) {
                     ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOn();
@@ -708,8 +712,8 @@ postEthereumUsersChangeDoubleAuthenticationRoute.post(function (req, res) {
                 res.json(response);
             }
             else {
-                
-                if(ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOff()) {
+
+                if (ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOff()) {
                     ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOn();
                 }
                 else if (ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOn()) {
@@ -742,8 +746,8 @@ postEthereumUsersChangeNotificationStatusRoute.post(function (req, res) {
                 res.json(response);
             }
             else {
-                
-                if(ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOff()) {
+
+                if (ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOff()) {
                     ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
                 }
                 else if (ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOn()) {
@@ -757,6 +761,104 @@ postEthereumUsersChangeNotificationStatusRoute.post(function (req, res) {
                 });
             }
         }
+    });
+});
+
+getCurrencyConversionsRoute.get(function (req, res) {
+
+
+    var Client = require('node-rest-client').Client;
+
+    var client = new Client();
+    var sourceCurrency = req.body.sourceCurrency;
+    var targetCurrency = req.body.targetCurrency;
+    client.get("http://api.fixer.io/latest?symbols=EUR,GBP,AUD,NZD,PHP&base=USD", function (data, response) {
+        // parsed response body as js object 
+        console.log(data);
+        // raw response 
+        console.log(response);
+        var obj = new Object();
+        obj.data = data;
+        //obj.response = response;
+
+        var exchange = require("exchange-rates"),
+            fx = require("money");
+
+        var jsonfile = require('jsonfile')
+        var file = './currency.json'
+        jsonfile.readFile(file, function (err, obj) {
+            console.dir(obj);
+            console.dir(obj);
+            obj.forEach(function (element) {
+                console.log(element.currency + " ," + element.value);
+            }, this);
+            var found = false;
+            obj.forEach(function (element) {
+                console.log(element.currency + " ," + element.value);
+            }, this);
+            for (var i = 0; i < obj.length; i++) {
+                var obj1 = obj[i];
+                console.log(obj1.value);
+                console.log(obj1.currency);
+            }
+            res.json(obj);
+        })
+    });
+});
+
+postConvertGivenTwoCurrenciesRoute.post(function (req, res) {
+    var sourceCurrency = req.body.sourceCurrency;
+    var targetCurrency = req.body.targetCurrency;
+    var client = new Client();
+    var urlString = "https://min-api.cryptocompare.com/data/price?fsym=" + sourceCurrency + "&tsyms=" + targetCurrency;
+    client.get(urlString, function (data, resp) {
+        response.message = "Currency is converted";
+        response.code = serverMessage.returnSuccess();
+        response.data = data;
+        res.json(response);
+    });
+});
+
+postConvertFromSourceToTargetCurrenciesRoute.post(function (req, res) {
+    var sourceCurrency = req.body.sourceCurrency;
+    var jsonfile = require('jsonfile')
+    var file = './currency.json';
+    var currencyGreaterThan20 = false;
+    var urlStringForFirst20 = "https://min-api.cryptocompare.com/data/price?fsym=" + sourceCurrency + "&tsyms=";
+    var urlStringForNext20 = "https://min-api.cryptocompare.com/data/price?fsym=" + sourceCurrency + "&tsyms=";
+    jsonfile.readFile(file, function (err, obj) {
+        for (var i = 0; i < obj.length; i++) {
+            var obj1 = obj[i];
+            console.log(obj1.value);
+            if (i < 20) {
+                urlStringForFirst20 = urlStringForFirst20 + obj1.value + ",";
+            }
+            else {
+                urlStringForNext20 = urlStringForNext20 + obj1.value + ",";
+                currencyGreaterThan20 = true;
+            }
+            console.log(obj1.currency);
+        }
+        var client = new Client();
+        client.get(urlStringForFirst20, function (dataForFirst20, resp) {
+            if (currencyGreaterThan20 == true) {
+                client.get(urlStringForNext20, function (dataForNext20, respon) {
+                    var obj2 = new Object();
+                    obj2.Next20 = dataForNext20;
+                    obj2.First20 = dataForFirst20;
+                    response.message = "Currency is converted";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = obj2;
+                    res.json(response);
+                });
+            }
+            else {
+                response.message = "Currency is converted";
+                response.code = serverMessage.returnSuccess();
+                response.data = data;
+                res.json(response);
+            }
+        });
     });
 });
 
