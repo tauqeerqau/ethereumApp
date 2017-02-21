@@ -9,7 +9,7 @@ var sinchAuth = require('sinch-auth');
 var sinchSms = require('sinch-messaging');
 var Client = require('node-rest-client').Client;
 var dateTime = require('node-datetime');
-
+// test for deployment
 var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
 var EthereumUserContactSyncing = require('./../models/EthereumUserContactSyncing');
