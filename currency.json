@@ -31,5 +31,6 @@
 {"currency": "InChain", "value": "INC"},
 {"currency": "Newzealand Dollar", "value": "NZD"},
 {"currency": "Canaddian Dollar", "value": "CAD"},
+{"currency": "Euro", "value": "EUR"},
 {"currency": "Euro", "value": "EUR"}
 ]
