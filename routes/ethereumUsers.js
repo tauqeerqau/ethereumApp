@@ -36,7 +36,7 @@ var postEthereumUsersChangeDoubleAuthenticationRoute = router.route('/ethereumUs
 var postEthereumUsersChangeNotificationStatusRoute = router.route('/ethereumUsersChangeNotificationStatus');
 var postConvertGivenTwoCurrenciesRoute = router.route('/convertGivenTwoCurrencies');
 var postConvertFromSourceToTargetCurrenciesRoute = router.route('/convertFromSourceToTargetCurrencies');
-
+var getAllCurrenciesRoute = router.route('/getAllCurrencies');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -432,8 +432,8 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: '2912142d-db45-45a9-a114-0fbac369c288',
-                                secret: 'QzuY8vzuUUuqg0KmnjedfQ=='
+                                key: '44366d3f-d7b9-42f2-8f41-de72956b2ab4',
+                                secret: 'jOLGxUbOcU6oEu4TAx09Eg=='
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
@@ -466,8 +466,8 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                         }
                         else {
                             var sinchSms = require('sinch-sms')({
-                                key: '2912142d-db45-45a9-a114-0fbac369c288',
-                                secret: 'QzuY8vzuUUuqg0KmnjedfQ=='
+                                key: '44366d3f-d7b9-42f2-8f41-de72956b2ab4',
+                                secret: 'jOLGxUbOcU6oEu4TAx09Eg=='
                             });
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
@@ -786,8 +786,7 @@ postConvertFromSourceToTargetCurrenciesRoute.post(function (req, res) {
     var urlStringForFirst20 = "https://min-api.cryptocompare.com/data/price?fsym=" + sourceCurrency + "&tsyms=";
     var urlStringForNext20 = "https://min-api.cryptocompare.com/data/price?fsym=" + sourceCurrency + "&tsyms=";
     jsonfile.readFile(file, function (err, obj) {
-        if(err)
-        {
+        if (err) {
             console.log(err);
         }
         for (var i = 0; i < obj.length; i++) {
@@ -800,29 +799,56 @@ postConvertFromSourceToTargetCurrenciesRoute.post(function (req, res) {
                 urlStringForNext20 = urlStringForNext20 + obj1.value + ",";
                 currencyGreaterThan20 = true;
             }
-            console.log(obj1.currency);
         }
         var client = new Client();
         client.get(urlStringForFirst20, function (dataForFirst20, resp) {
             if (currencyGreaterThan20 == true) {
                 client.get(urlStringForNext20, function (dataForNext20, respon) {
                     var obj2 = new Object();
-                    obj2.Next20 = dataForNext20;
-                    obj2.First20 = dataForFirst20;
                     response.message = "Currency is converted";
                     response.code = serverMessage.returnSuccess();
-                    response.data = obj2;
+                    var object3 = extend({}, dataForFirst20, dataForNext20);
+                    console.log(object3);
+                    response.data = object3;
                     res.json(response);
                 });
             }
             else {
                 response.message = "Currency is converted";
                 response.code = serverMessage.returnSuccess();
-                response.data = data;
+                response.data = responseArray;
                 res.json(response);
             }
         });
     });
 });
+
+getAllCurrenciesRoute.get(function (req, res) {
+    var jsonfile = require('jsonfile');
+    var fullUrl = req.protocol + '://' + req.get('host');
+    var file = __dirname + "./../public/currency.json";
+    jsonfile.readFile(file, function (err, data) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            response.message = "Currency's list";
+            response.code = serverMessage.returnSuccess();
+            response.data = data;
+            res.json(response);
+        }
+    });
+});
+
+function extend(target) {
+    var sources = [].slice.call(arguments, 1);
+    sources.forEach(function (source) {
+        for (var prop in source) {
+            target[prop] = source[prop];
+        }
+    });
+    return target;
+}
+
 
 module.exports = router;
