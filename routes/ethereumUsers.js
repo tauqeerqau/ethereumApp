@@ -863,7 +863,7 @@ getDasboardDataRoute.get(function(req,res){
         obj.averageBlockTime = data.data.stats.blockTime;
         obj.hashRate = data.data.stats.hashRate;
         obj.lastBlock = data.data.difficulty.number;
-        obj.currentRate = "USD/BTC"+" $"+data.data.price.usd+" @ "+data.data.price.btc;
+        obj.currentRate =  "$"+data.data.price.usd+" @ "+data.data.price.btc;
         obj.difficulty = data.data.stats.difficulty;
         obj.uncleRate = data.data.stats.uncle_rate;
         obj.gasLimit = data.data.difficulty.gasLimit;
@@ -878,7 +878,7 @@ getDasboardDataRoute.get(function(req,res){
                     var totalSupply = dataForTotalSupplyOfEther.result;
                     totalSupply  = totalSupply / 1000000000000000000;
                     obj.totalSupply = totalSupply;
-                    obj.marketCapacity = totalSupply * obj.currentRate.usd;
+                    obj.marketCapacity = totalSupply * data.data.price.usd;
                     client.get(urlStringTotalTransactionCount,function(dataForTotalTransactionCount,resp){
                         obj.totalTransactionCount = dataForTotalTransactionCount.data[0].count;
                         res.json(obj);
