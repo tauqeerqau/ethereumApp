@@ -37,6 +37,7 @@ var postEthereumUsersChangeNotificationStatusRoute = router.route('/ethereumUser
 var postConvertGivenTwoCurrenciesRoute = router.route('/convertGivenTwoCurrencies');
 var postConvertFromSourceToTargetCurrenciesRoute = router.route('/convertFromSourceToTargetCurrencies');
 var getAllCurrenciesRoute = router.route('/getAllCurrencies');
+var getDasboardDataRoute = router.route('/getDasboardData');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -849,6 +850,41 @@ function extend(target) {
     });
     return target;
 }
+
+getDasboardDataRoute.get(function(req,res){
+    var client = new Client();
+    var urlString = "https://www.etherchain.org/api/basic_stats";
+    var urlStringGasPrice = "https://etherchain.org/api/gasPrice";
+    var urlStringActiveNodeCount = "https://etherchain.org/api/nodes";
+    var urlStringGetTotalSupplyOfEther = "https://api.etherscan.io/api?module=stats&action=ethsupply&apikey=QQBE2GAH8MKB8XVHI8PEYZCXTIEWF4Z11D";
+    var urlStringTotalTransactionCount = "https://etherchain.org/api/txs/count";
+    client.get(urlString, function (data, resp) {
+        var obj = new Object();
+        obj.averageBlockTime = data.data.stats.blockTime;
+        obj.hashRate = data.data.stats.hashRate;
+        obj.lastBlock = data.data.difficulty.number;
+        obj.currentRate = data.data.price;
+        obj.difficulty = data.data.stats.difficulty;
+        obj.uncleRate = data.data.stats.uncle_rate;
+        obj.gasLimit = data.data.difficulty.gasLimit;
+        client.get(urlStringGasPrice,function(dataForGas,resp){
+            obj.gasPrice = dataForGas.data[0].price;
+            client.get(urlStringActiveNodeCount,function(dataForActiveNodeCount,resp){
+                obj.activeNodeCount = dataForActiveNodeCount.data[0].data.length;
+                client.get(urlStringGetTotalSupplyOfEther,function(dataForTotalSupplyOfEther, resp){
+                    var totalSupply = dataForTotalSupplyOfEther.result;
+                    totalSupply  = totalSupply / 1000000000000000000;
+                    obj.totalSupply = totalSupply;
+                    obj.marketCapacity = totalSupply * obj.currentRate.usd;
+                    client.get(urlStringTotalTransactionCount,function(dataForTotalTransactionCount,resp){
+                        obj.totalTransactionCount = dataForTotalTransactionCount.data[0].count;
+                        res.json(obj);
+                    });
+                });
+            });
+        });
+    });
+});
 
 
 module.exports = router;
