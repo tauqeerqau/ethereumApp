@@ -869,6 +869,9 @@ getDasboardDataRoute.get(function(req,res){
         obj.gasLimit = data.data.difficulty.gasLimit;
         client.get(urlStringGasPrice,function(dataForGas,resp){
             obj.gasPrice = dataForGas.data[0].price;
+            // to convert from wei to gwei
+            obj.gasPrice = obj.gasPrice / 1000000000;
+            obj.gasPrice = obj.gasPrice + " GWEI";
             client.get(urlStringActiveNodeCount,function(dataForActiveNodeCount,resp){
                 obj.activeNodeCount = dataForActiveNodeCount.data[0].data.length;
                 client.get(urlStringGetTotalSupplyOfEther,function(dataForTotalSupplyOfEther, resp){
