@@ -863,7 +863,7 @@ getDasboardDataRoute.get(function(req,res){
         obj.averageBlockTime = data.data.stats.blockTime;
         obj.hashRate = data.data.stats.hashRate;
         obj.lastBlock = data.data.difficulty.number;
-        obj.currentRate = data.data.price;
+        obj.currentRate = "USD/BTC"+" $"+data.data.price.usd+" @ "+data.data.price.btc;
         obj.difficulty = data.data.stats.difficulty;
         obj.uncleRate = data.data.stats.uncle_rate;
         obj.gasLimit = data.data.difficulty.gasLimit;
