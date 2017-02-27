@@ -14,6 +14,9 @@ var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
 var EthereumUserContactSyncing = require('./../models/EthereumUserContactSyncing');
 var EthereumUserMobileDevices = require('./../models/EthereumUserMobileDevices');
+var TransactionChart = require('./../models/TransactionChart');
+var GasUsedChart =  require('./../models/GasUsedChart');
+var AverageGasLimitChart = require('./../models/AverageGasLimitChart');
 
 var multipartMiddleware = multipart();
 
@@ -38,6 +41,9 @@ var postConvertGivenTwoCurrenciesRoute = router.route('/convertGivenTwoCurrencie
 var postConvertFromSourceToTargetCurrenciesRoute = router.route('/convertFromSourceToTargetCurrencies');
 var getAllCurrenciesRoute = router.route('/getAllCurrencies');
 var getDasboardDataRoute = router.route('/getDasboardData');
+var getChartForDailyTransactionsDataRoute = router.route('/getChartForDailyTransactionsData');
+var getTotalDailyGasUsedDataRoute = router.route('/getTotalDailyGasUsedData');
+var getAverageGasLimitChartDataRoute = router.route('/getAverageGasLimitChartData');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -851,7 +857,7 @@ function extend(target) {
     return target;
 }
 
-getDasboardDataRoute.get(function(req,res){
+getDasboardDataRoute.get(function (req, res) {
     var client = new Client();
     var urlString = "https://www.etherchain.org/api/basic_stats";
     var urlStringGasPrice = "https://etherchain.org/api/gasPrice";
@@ -863,28 +869,205 @@ getDasboardDataRoute.get(function(req,res){
         obj.averageBlockTime = data.data.stats.blockTime;
         obj.hashRate = data.data.stats.hashRate;
         obj.lastBlock = data.data.difficulty.number;
-        obj.currentRate =  "$"+data.data.price.usd+" @ "+data.data.price.btc;
+        obj.currentRate = "$" + data.data.price.usd + " @ " + data.data.price.btc;
         obj.difficulty = data.data.stats.difficulty;
         obj.uncleRate = data.data.stats.uncle_rate;
         obj.gasLimit = data.data.difficulty.gasLimit;
-        client.get(urlStringGasPrice,function(dataForGas,resp){
+        client.get(urlStringGasPrice, function (dataForGas, resp) {
             obj.gasPrice = dataForGas.data[0].price;
             // to convert from wei to gwei
             obj.gasPrice = obj.gasPrice / 1000000000;
             obj.gasPrice = obj.gasPrice + " GWEI";
-            client.get(urlStringActiveNodeCount,function(dataForActiveNodeCount,resp){
+            client.get(urlStringActiveNodeCount, function (dataForActiveNodeCount, resp) {
                 obj.activeNodeCount = dataForActiveNodeCount.data[0].data.length;
-                client.get(urlStringGetTotalSupplyOfEther,function(dataForTotalSupplyOfEther, resp){
+                client.get(urlStringGetTotalSupplyOfEther, function (dataForTotalSupplyOfEther, resp) {
                     var totalSupply = dataForTotalSupplyOfEther.result;
-                    totalSupply  = totalSupply / 1000000000000000000;
+                    totalSupply = totalSupply / 1000000000000000000;
                     obj.totalSupply = totalSupply;
                     obj.marketCapacity = totalSupply * data.data.price.usd;
-                    client.get(urlStringTotalTransactionCount,function(dataForTotalTransactionCount,resp){
+                    client.get(urlStringTotalTransactionCount, function (dataForTotalTransactionCount, resp) {
                         obj.totalTransactionCount = dataForTotalTransactionCount.data[0].count;
-                        res.json(obj);
+                        AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
+                            obj.averageGasLimitChartData = averageGasLimitChartData;
+                            GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
+                                obj.gasUsedChartData = gasUsedChartData;
+                                TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
+                                    obj.transactionChartData = transactionChartData;
+                                    res.json(obj);
+                                }); 
+                            });
+                        });
                     });
                 });
             });
+        });
+    });
+});
+
+getChartForDailyTransactionsDataRoute.get(function(req,res){
+    var http = require('http');
+    var fs = require('fs');
+    var fullUrl = req.protocol + '://' + req.get('host');
+    var file = __dirname + "./../public/blocksize.txt";
+    var fileToBeUploaded = fs.createWriteStream(file);
+    var dataToSend = [];
+    var request = http.get("http://etherscan.io/chart/tx?output=csv", function (response) {
+        response.pipe(fileToBeUploaded);
+        var lineReader = require('readline').createInterface({
+            input: require('fs').createReadStream(file)
+        });
+        var readline = require('linebyline'),
+            rl = readline(file);
+        rl.on('line', function (line, lineCount, byteCount) {
+            // do something with the line of text 
+            console.log(lineCount);
+        })
+            .on('error', function (e) {
+                // something went wrong 
+            })
+            .on('end',function(e){
+                console.log("Finished");
+                res.json(dataToSend);
+                dataToSend.forEach(function(element) {
+                    var transactionChart = new TransactionChart();
+                    transactionChart.transactionTimestamp = element.timestamp;
+                    transactionChart.transactionValue = element.value;
+                    transactionChart.save(function(req,res){
+
+                    });
+                }, this);
+            });
+        var i = 0;
+        console.log(lineReader);
+        lineReader.on('line', function (line, lineCount, byteCount) {
+            console.log('Line from file:', line);
+            console.log('Line Count : ' + lineCount);
+            i++;
+            if (i > 3) {
+                var lineData = line.split(';');
+                var obj = new Object();
+                obj.timestamp = lineData[0];
+                obj.value = lineData[1];
+                console.log(lineData[0]);
+                console.log(lineData[1]);
+                dataToSend.push(obj);
+            }
+            
+            if (line == null) {
+                res.json(dataToSend);
+            }
+        });
+    });
+});
+
+getTotalDailyGasUsedDataRoute.get(function(req,res){
+    var http = require('http');
+    var fs = require('fs');
+    var fullUrl = req.protocol + '://' + req.get('host');
+    var file = __dirname + "./../public/GasUsedChart.txt";
+    var fileToBeUploaded = fs.createWriteStream(file);
+    var dataToSend = [];
+    var request = http.get("http://etherscan.io/chart/gasused?output=csv", function (response) {
+        response.pipe(fileToBeUploaded);
+        var lineReader = require('readline').createInterface({
+            input: require('fs').createReadStream(file)
+        });
+        var readline = require('linebyline'),
+            rl = readline(file);
+        rl.on('line', function (line, lineCount, byteCount) {
+            // do something with the line of text 
+            console.log(lineCount);
+        })
+            .on('error', function (e) {
+                // something went wrong 
+            })
+            .on('end',function(e){
+                console.log("Finished");
+                res.json(dataToSend);
+                dataToSend.forEach(function(element) {
+                    var gasUsedChart = new GasUsedChart();
+                    gasUsedChart.gasUsedTimestamp = element.gasUsedTimestamp;
+                    gasUsedChart.gasUsedValue = element.gasUsedValue;
+                    gasUsedChart.save(function(req,res){
+
+                    });
+                }, this);
+            });
+        var i = 0;
+        console.log(lineReader);
+        lineReader.on('line', function (line, lineCount, byteCount) {
+            console.log('Line from file:', line);
+            console.log('Line Count : ' + lineCount);
+            i++;
+            if (i > 3) {
+                var lineData = line.split(';');
+                var obj = new Object();
+                obj.gasUsedTimestamp = lineData[0];
+                obj.gasUsedValue = lineData[1];
+                console.log(lineData[0]);
+                console.log(lineData[1]);
+                dataToSend.push(obj);
+            }
+            
+            if (line == null) {
+                res.json(dataToSend);
+            }
+        });
+    });
+});
+
+getAverageGasLimitChartDataRoute.get(function(req,res){
+    var http = require('http');
+    var fs = require('fs');
+    var fullUrl = req.protocol + '://' + req.get('host');
+    var file = __dirname + "./../public/AverageGasLimitChart.txt";
+    var fileToBeUploaded = fs.createWriteStream(file);
+    var dataToSend = [];
+    var request = http.get("http://etherscan.io/chart/gasprice?output=csv", function (response) {
+        response.pipe(fileToBeUploaded);
+        var lineReader = require('readline').createInterface({
+            input: require('fs').createReadStream(file)
+        });
+        var readline = require('linebyline'),
+            rl = readline(file);
+        rl.on('line', function (line, lineCount, byteCount) {
+            // do something with the line of text 
+            console.log(lineCount);
+        })
+            .on('error', function (e) {
+                // something went wrong 
+            })
+            .on('end',function(e){
+                console.log("Finished");
+                res.json(dataToSend);
+                dataToSend.forEach(function(element) {
+                    var averageGasLimitChart = new AverageGasLimitChart();
+                    averageGasLimitChart.gasLimitTimestamp = element.gasLimitTimestamp;
+                    averageGasLimitChart.gasLimitValue = element.gasLimitValue;
+                    averageGasLimitChart.save(function(req,res){
+
+                    });
+                }, this);
+            });
+        var i = 0;
+        console.log(lineReader);
+        lineReader.on('line', function (line, lineCount, byteCount) {
+            console.log('Line from file:', line);
+            console.log('Line Count : ' + lineCount);
+            i++;
+            if (i > 3) {
+                var lineData = line.split(';');
+                var obj = new Object();
+                obj.gasLimitTimestamp = lineData[0];
+                obj.gasLimitValue = lineData[1];
+                console.log(lineData[0]);
+                console.log(lineData[1]);
+                dataToSend.push(obj);
+            }
+            
+            if (line == null) {
+                res.json(dataToSend);
+            }
         });
     });
 });
