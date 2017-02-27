@@ -893,8 +893,7 @@ getDasboardDataRoute.get(function (req, res) {
                                 obj.gasUsedChartData = gasUsedChartData;
                                 TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
                                     obj.transactionChartData = transactionChartData;
-                                    //res.json(obj);
-									res.json("obj");
+                                    res.json(obj);
                                 }); 
                             });
                         });
