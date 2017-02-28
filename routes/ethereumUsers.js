@@ -888,7 +888,7 @@ getDasboardDataRoute.get(function (req, res) {
                     client.get(urlStringTotalTransactionCount, function (dataForTotalTransactionCount, resp) {
                         obj.totalTransactionCount = dataForTotalTransactionCount.data[0].count;
                         AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
-                            obj.averageGasLimitChartData = averageGasLimitChartData;
+                            obj.blockTimeChartData = averageGasLimitChartData;
                             GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
                                 obj.gasUsedChartData = gasUsedChartData;
                                 TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
@@ -1020,10 +1020,10 @@ getAverageGasLimitChartDataRoute.get(function(req,res){
     var http = require('http');
     var fs = require('fs');
     var fullUrl = req.protocol + '://' + req.get('host');
-    var file = __dirname + "./../public/AverageGasLimitChart.txt";
+    var file = __dirname + "./../public/blocktime.txt";
     var fileToBeUploaded = fs.createWriteStream(file);
     var dataToSend = [];
-    var request = http.get("http://etherscan.io/chart/gasprice?output=csv", function (response) {
+    var request = http.get("http://etherscan.io/chart/blocktime?output=csv", function (response) {
         response.pipe(fileToBeUploaded);
         var lineReader = require('readline').createInterface({
             input: require('fs').createReadStream(file)
