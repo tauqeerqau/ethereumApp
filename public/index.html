@@ -4,7 +4,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
     <script>
   
-    var socket = io().connect('http://localhost:3000/');
+    //var socket = io().connect('http://localhost:3000/');
+	var socket = io().connect('http://etherapp.azurewebsites.net/');
 
     socket.on('connect', function () {
         var data = new Object();
