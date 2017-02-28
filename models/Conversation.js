@@ -8,6 +8,8 @@ var ConversationSchema   = new mongoose.Schema({
     username1:String,
     _user2Id : { type: mongoose.Schema.Types.ObjectId, ref: 'EthereumUser' },
     username2:String,
+    user1Mobile:String,
+    user2Mobile:String,
     createdOnUTC: Date,
     updatedOnUTC: Date,
     isDeleted: Boolean
