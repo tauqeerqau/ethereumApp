@@ -16,6 +16,9 @@ var index = require('./routes/index');
 var users = require('./routes/users');
 var ethereumUsers = require('./routes/ethereumUsers');
 
+var EthereumUser = require('./models/EthereumUser');
+var Conversation = require('./models/Conversation');
+
 //var app = express();
 //server.listen(3000);
 server.listen(process.env.PORT);
@@ -73,15 +76,19 @@ io.sockets.on('connection', function (client) {
     var user2MobileNumber = data.user2MobileNumber;
     user1MobileNumber = "+" + user1MobileNumber;
     user2MobileNumber = "+" + user2MobileNumber;
-    Conversation.findOne({ user1Id: data.user1Id, user2Id: data.user2Id })
+    Conversation.findOne({ user1Mobile: user1MobileNumber, user2Mobile: user2MobileNumber })
       .exec(function (err, conversationObject) {
+        if(err)
+        {
+          console.log(err);
+        }
         if (conversationObject == null) {
-          Conversation.findOne({ user1Id: data.user2Id, user2Id: data.user1Id })
+          Conversation.findOne({ user1Mobile: user2MobileNumber, user2Mobile: user1MobileNumber })
             .exec(function (err, conversationObject) {
               if (conversationObject == null) {
                 var conversation = new Conversation();
-                conversation.user1Mobile = data.user1MobileNumber;
-                conversation.user2Mobile = data.user2MobileNumber;
+                conversation.user1Mobile = user1MobileNumber;
+                conversation.user2Mobile = user2MobileNumber;
                 conversation.createdOnUTC = new Date().getTime();
                 conversation.updatedOnUTC = new Date().getTime();
                 conversation.save(function (err, conversationSaved) {
@@ -205,25 +212,30 @@ io.sockets.on('connection', function (client) {
     });
     io.sockets["in"](client.room).emit('updatechat', client.username, data);
   });
-  client.on('sendConversation', function (data) {
-    console.log("User Id is " + data.user1Id);
-    Conversation.find({ $or: [{ _user1Id: data.user1Id }, { _user2Id: data.user1Id }] }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationList) {
-      var objectArray = [];
-      var counter = 0;
-      for (var i = 0; i < conversationList.length; i++) {
-        var conversation = conversationList[i];
-        ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
-          var obj = new Object();
-          obj.conversation = conversation;
-          obj.messages = conversationMessages;
-          objectArray.push(obj);
-          counter++;
-          if (counter == conversationList.length - 1) {
-            client.emit('onConversationResponse', objectArray);
+  client.on('sendConversation', function (token,pageNumber) {
+    console.log("User token is " + token);
+    console.log("Page Number is " + pageNumber);
+    EthereumUser.findOne({ 'ethereumUserApplicationToken': token }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+      if (ethereumUser != null) {
+        Conversation.find({ $or: [{ user1Mobile: ethereumUser.userContactNumber }, { user2Mobile: ethereumUser.userContactNumber }] }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationList) {
+          var objectArray = [];
+          var counter = 0;
+          for (var i = 0; i < conversationList.length; i++) {
+            var conversation = conversationList[i];
+            ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
+              var obj = new Object();
+              obj.conversation = conversation;
+              obj.messages = conversationMessages;
+              objectArray.push(obj);
+              if (counter == conversationList.length - 1) {
+                client.emit('onConversationResponse', objectArray);
+              }
+              counter++;
+            }).limit(5);
           }
-        }).limit(5);
+        }).limit(20).skip(pageNumber * 20);
       }
-    }).limit(20).skip(data.pageNumber * 20);
+    });
   });
   client.on('sendImage', function (data) {//IOS will send Room Name
     console.log(data.Image);
@@ -269,10 +281,10 @@ io.sockets.on('connection', function (client) {
     client.broadcast.emit('updatechat', 'SERVER', client.username + ' has disconnected');
     client.leave(client.room);
   });
-  client.on('messagesRequest',function(data){
+  client.on('messagesRequest', function (data) {
     ConversationMessages.find({ _conversationId: data.conversationId }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
       client.emit('onMessagesReceived', conversationMessages);
-    }).skip(data.pageNumber*30).limit(30);
+    }).skip(data.pageNumber * 30).limit(30);
   });
   client.on('event', function (data) { });
 });
