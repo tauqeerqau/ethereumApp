@@ -273,9 +273,12 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                         ethereumUserMobileDevices.forEach(function (element) {
                                             devicesNames.push(element.userDeviceName);
                                         }, this);
-                                        ethereumUser.ethereumUserLoginDetail = devicesNames;
-                                        response.data = ethereumUser;
-                                        res.json(response);
+                                        ethereumUser.userGCM = req.body.userGCM;
+                                        ethereumUser.save(function (err) {
+                                            ethereumUser.ethereumUserLoginDetail = devicesNames;
+                                            response.data = ethereumUser;
+                                            res.json(response);
+                                        });
                                     }
                                 }).limit(5);
                             }
