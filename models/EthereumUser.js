@@ -23,7 +23,8 @@ var UserSchema   = new mongoose.Schema({
     ethereumUserPasscodeStatus: Number,
     ethereumUserLoginDetail: Object,
     ethereumUserDoubleAuthenticationMode: Number,
-    ethereumUserNotificationStatus: Number
+    ethereumUserNotificationStatus: Number,
+    userGCM: String
 });
 
 // Export the Mongoose model

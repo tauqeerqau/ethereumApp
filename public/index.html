@@ -3,88 +3,101 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
     <script>
-  
-    //var socket = io().connect('http://localhost:3000/');
-	var socket = io().connect('http://etherapp.azurewebsites.net/');
 
-    socket.on('connect', function () {
-        var data = new Object();
-        data.user1Id = '587c96177078bf221c34c721';
-        data.user2Id = '587a63e9f4a8f119d8ee9db8';
-        data.username1 = 'Micheal';
-        data.username2 = 'John';
-        socket.emit('adduser', data);
-        //socket.emit('adduser', prompt("What's your name: "));
-    });
+        //var socket = io().connect('http://localhost:3000/');
+		var socket = io().connect('http://etherapp.azurewebsites.net/');
 
-    socket.on('updatechat', function (username, data) {
-        $('#conversation').append('<b>' + username + ':</b> ' + data + '<br>');
-    });
-
-
-    socket.on('updaterooms', function (rooms, current_room) {
-        $('#rooms').empty();
-        $.each(rooms, function (key, value) {
-            if (value == current_room) {
-                $('#rooms').append('<div>' + value + '</div>');
-            }
-            else {
-                $('#rooms').append('<div><a href="#" onclick="switchRoom(\'' + value + '\')">' + value + '</a></div>');
-            }
-        });
-    });
-    socket.on('typingstart', function (name) {
-        console.log(name + " is typing");
-    });
-
-    socket.on('typingend', function (name) {
-        console.log(name + " is not typing");
-    });
-
-    function switchRoom(room) {
-        socket.emit('switchRoom', room);
-    }
-
-    $(function () {
-        $('#datasend').click(function () {
-            var message = $('#data').val();
-            $('#data').val('');
+        socket.on('connect', function () {
             var data = new Object();
-            data.messageType = 100;
-            data.messageText = "Hi Man, How are you?";
-            data._conversationId = '588ef8a01eea4f2c0caf1b1e';
-            data._messageToUserId = '587a63e9f4a8f119d8ee9db8';
-            data._messageFromUserId = '587a63e9f4a8f119d8ee9db8';
-            socket.emit('sendchat', data);
+            data.user1Id = '587c96177078bf221c34c721';
+            data.user2Id = '587a63e9f4a8f119d8ee9db8';
+            data.username1 = 'Micheal';
+            data.username2 = 'John';
+            //socket.emit('adduser', data);
+            //socket.emit('adduser', prompt("What's your name: "));
         });
 
-        
-            $('#requestDatasend').click(function () {
-                var message = $('#requestData').val();
-                $('#requestData').val('');
+        socket.on('onRoomSet', function (data) {
+            $('#conversation').append("sasdhello how are you");
+        });
+
+
+     /*   socket.on('updatechat', function (username, data) {
+            $('#conversation').append('<b>' + username + ':</b> ' + data + '<br>');
+        });
+*/
+
+        socket.on('updaterooms', function (rooms, current_room) {
+            $('#rooms').empty();
+            $.each(rooms, function (key, value) {
+                if (value == current_room) {
+                    $('#rooms').append('<div>' + value + '</div>');
+                }
+                else {
+                    $('#rooms').append('<div><a href="#" onclick="switchRoom(\'' + value + '\')">' + value + '</a></div>');
+                }
+            });
+        });
+        socket.on('typingstart', function (name) {
+            console.log(name + " is typing");
+        });
+
+        socket.on('typingend', function (name) {
+            console.log(name + " is not typing");
+        });
+
+        function switchRoom(room) {
+            socket.emit('switchRoom', room);
+        }
+
+        $(function () {
+            $('#datasend').click(function () {
+                var message = $('#data').val();
+                $('#data').val('');
                 var data = new Object();
+                data.messageType = 100;
+                data.messageText = "I am Fine";
+                data._conversationId = '58b5e241da6bc217040d601a';
+                data._messageToUserId = '58b31593a45de2112032ee8f';
+                data._messageFromUserId = '58af39ccbe2d4e1c90dd107b';
+                //socket.emit('sendchat', data);
+                data.user1MobileNumber = "923315330709";
+                data.user2MobileNumber = "923077402605";
+                //socket.emit('createRoom', data);
+                socket.emit('sendConversation', 356942,0);
+                data.user1Id = "587a63e9f4a8f119d8ee9db8";
+                //socket.emit('sendConversation',"569115,0");
+                $('#conversation').append('<b>' + username + ':</b> ' + data + '<br>');
+            });
+        });
+
+
+        $('#requestDatasend').click(function () {
+            var message = $('#requestData').val();
+            $('#requestData').val('');
+            var data = new Object();
             data.messageType = 200;
             data.messageText = "100";
             data._conversationId = '588ef8a01eea4f2c0caf1b1e';
             data._messageToUserId = '587a63e9f4a8f119d8ee9db8';
             data._messageFromUserId = '587a63e9f4a8f119d8ee9db8';
-                socket.emit('sendRequestchat', message);
-            });
-
-            $('#data').keypress(function (e) {
-                if (e.which == 13) {
-                    $(this).blur();
-                    $('#datasend').focus().click();
-                }
-            });
-
-            $('#roombutton').click(function () {
-                var name = $('#roomname').val();
-                $('#roomname').val('');
-                socket.emit('create', name)
-            });
+            socket.emit('sendRequestchat', message);
         });
-</script>
+
+        $('#data').keypress(function (e) {
+            if (e.which == 13) {
+                $(this).blur();
+                $('#datasend').focus().click();
+            }
+        });
+
+        $('#roombutton').click(function () {
+            var name = $('#roomname').val();
+            $('#roomname').val('');
+            socket.emit('create', name)
+        });
+
+    </script>
 </head>
 
 <body>
@@ -111,25 +124,24 @@
 <input type="button" id="roombutton" value="create room" />
 </div>
 <input type="file" id="files" />
-<img id="image" />
-... // the rest of your page
+<img id="image" /> ... // the rest of your page
 <script>
-var socket = io().connect('http://localhost:3000/');
- document.getElementById("files").onchange = function () {
-    var reader = new FileReader();
-    var extension = "";
-    reader.onload = function (e) {
-        // get loaded data and render thumbnail.
-        var data = new Object();
-        data.Image = e.target.result;
-        data.extension = extension;
-        socket.emit('sendImage', data);
-        document.getElementById("image").src = e.target.result;
-    };
-    // read the image file as a data URL.
-    //reader.readAsDataURL(this.files[0]);
-    var extension = this.files[0].name.split('.').pop().toLowerCase();
-    reader.readAsArrayBuffer(this.files[0]);
-};
+            var socket = io().connect('http://localhost:3000/');
+            document.getElementById("files").onchange = function () {
+                var reader = new FileReader();
+                var extension = "";
+                reader.onload = function (e) {
+                    // get loaded data and render thumbnail.
+                    var data = new Object();
+                    data.Image = e.target.result;
+                    data.extension = extension;
+                    socket.emit('sendImage', data);
+                    document.getElementById("image").src = e.target.result;
+                };
+                // read the image file as a data URL.
+                //reader.readAsDataURL(this.files[0]);
+                var extension = this.files[0].name.split('.').pop().toLowerCase();
+                reader.readAsArrayBuffer(this.files[0]);
+            };
 </script>
 </body>

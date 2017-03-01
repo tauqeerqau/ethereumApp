@@ -12,6 +12,8 @@ var ConversationSchema   = new mongoose.Schema({
     user2Mobile:String,
     createdOnUTC: Date,
     updatedOnUTC: Date,
+    conversationReadByUser1: Boolean,
+    conversationReadByUser2: Boolean,
     isDeleted: Boolean
 });
 

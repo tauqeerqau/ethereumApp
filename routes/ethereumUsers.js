@@ -15,7 +15,7 @@ var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
 var EthereumUserContactSyncing = require('./../models/EthereumUserContactSyncing');
 var EthereumUserMobileDevices = require('./../models/EthereumUserMobileDevices');
 var TransactionChart = require('./../models/TransactionChart');
-var GasUsedChart =  require('./../models/GasUsedChart');
+var GasUsedChart = require('./../models/GasUsedChart');
 var AverageGasLimitChart = require('./../models/AverageGasLimitChart');
 
 var multipartMiddleware = multipart();
@@ -86,7 +86,7 @@ var url = utility.getURL();
 
 mongoose.connect(url, function (err, db) {
     if (err) {
-        console.log("Failed to Connect to MongoDB");
+        console.log(err);
     }
     else {
         console.log("Successfully Connected");
@@ -119,6 +119,7 @@ postEthereumUserRoute.post(function (req, res) {
             ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnNotSet();
             ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
             ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
+            ethereumUser.userGCM = req.body.userGCM;
             ethereumUser.save(function (err) {
                 if (err) {
                     res.send(err);
@@ -210,9 +211,12 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                         ethereumUserMobileDevices.forEach(function (element) {
                                             devicesNames.push(element.userDeviceName);
                                         }, this);
-                                        ethereumUser.ethereumUserLoginDetail = devicesNames;
-                                        response.data = ethereumUser;
-                                        res.json(response);
+                                        ethereumUser.userGCM = req.body.userGCM;
+                                        ethereumUser.save(function (err) {
+                                            ethereumUser.ethereumUserLoginDetail = devicesNames;
+                                            response.data = ethereumUser;
+                                            res.json(response);
+                                        });
                                     }
                                 }).limit(5);
                             }
@@ -894,7 +898,7 @@ getDasboardDataRoute.get(function (req, res) {
                                 TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
                                     obj.transactionChartData = transactionChartData;
                                     res.json(obj);
-                                }); 
+                                });
                             });
                         });
                     });
@@ -904,7 +908,7 @@ getDasboardDataRoute.get(function (req, res) {
     });
 });
 
-getChartForDailyTransactionsDataRoute.get(function(req,res){
+getChartForDailyTransactionsDataRoute.get(function (req, res) {
     var http = require('http');
     var fs = require('fs');
     var fullUrl = req.protocol + '://' + req.get('host');
@@ -925,14 +929,14 @@ getChartForDailyTransactionsDataRoute.get(function(req,res){
             .on('error', function (e) {
                 // something went wrong 
             })
-            .on('end',function(e){
+            .on('end', function (e) {
                 console.log("Finished");
                 res.json(dataToSend);
-                dataToSend.forEach(function(element) {
+                dataToSend.forEach(function (element) {
                     var transactionChart = new TransactionChart();
                     transactionChart.transactionTimestamp = element.timestamp;
                     transactionChart.transactionValue = element.value;
-                    transactionChart.save(function(req,res){
+                    transactionChart.save(function (req, res) {
 
                     });
                 }, this);
@@ -952,7 +956,7 @@ getChartForDailyTransactionsDataRoute.get(function(req,res){
                 console.log(lineData[1]);
                 dataToSend.push(obj);
             }
-            
+
             if (line == null) {
                 res.json(dataToSend);
             }
@@ -960,7 +964,7 @@ getChartForDailyTransactionsDataRoute.get(function(req,res){
     });
 });
 
-getTotalDailyGasUsedDataRoute.get(function(req,res){
+getTotalDailyGasUsedDataRoute.get(function (req, res) {
     var http = require('http');
     var fs = require('fs');
     var fullUrl = req.protocol + '://' + req.get('host');
@@ -981,14 +985,14 @@ getTotalDailyGasUsedDataRoute.get(function(req,res){
             .on('error', function (e) {
                 // something went wrong 
             })
-            .on('end',function(e){
+            .on('end', function (e) {
                 console.log("Finished");
                 res.json(dataToSend);
-                dataToSend.forEach(function(element) {
+                dataToSend.forEach(function (element) {
                     var gasUsedChart = new GasUsedChart();
                     gasUsedChart.gasUsedTimestamp = element.gasUsedTimestamp;
                     gasUsedChart.gasUsedValue = element.gasUsedValue;
-                    gasUsedChart.save(function(req,res){
+                    gasUsedChart.save(function (req, res) {
 
                     });
                 }, this);
@@ -1008,7 +1012,7 @@ getTotalDailyGasUsedDataRoute.get(function(req,res){
                 console.log(lineData[1]);
                 dataToSend.push(obj);
             }
-            
+
             if (line == null) {
                 res.json(dataToSend);
             }
@@ -1016,7 +1020,7 @@ getTotalDailyGasUsedDataRoute.get(function(req,res){
     });
 });
 
-getAverageGasLimitChartDataRoute.get(function(req,res){
+getAverageGasLimitChartDataRoute.get(function (req, res) {
     var http = require('http');
     var fs = require('fs');
     var fullUrl = req.protocol + '://' + req.get('host');
@@ -1037,14 +1041,14 @@ getAverageGasLimitChartDataRoute.get(function(req,res){
             .on('error', function (e) {
                 // something went wrong 
             })
-            .on('end',function(e){
+            .on('end', function (e) {
                 console.log("Finished");
                 res.json(dataToSend);
-                dataToSend.forEach(function(element) {
+                dataToSend.forEach(function (element) {
                     var averageGasLimitChart = new AverageGasLimitChart();
                     averageGasLimitChart.gasLimitTimestamp = element.gasLimitTimestamp;
                     averageGasLimitChart.gasLimitValue = element.gasLimitValue;
-                    averageGasLimitChart.save(function(req,res){
+                    averageGasLimitChart.save(function (req, res) {
 
                     });
                 }, this);
@@ -1064,7 +1068,7 @@ getAverageGasLimitChartDataRoute.get(function(req,res){
                 console.log(lineData[1]);
                 dataToSend.push(obj);
             }
-            
+
             if (line == null) {
                 res.json(dataToSend);
             }

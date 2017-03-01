@@ -200,14 +200,24 @@ io.sockets.on('connection', function (client) {
     conversationMessage.messageType = data.messageType;
     conversationMessage.messageText = data.messageText;
     conversationMessage._conversationId = data._conversationId;
-    conversationMessage._messageToUserId = data._messageToUserId;
-    conversationMessage._messageFromUserId = data._messageFromUserId;
+    conversationMessage._messageToMobile = data._messageToMobile;
+    conversationMessage._messageFromMobile = data.__messageFromMobile;
+    conversationMessage.createdOnUTC = new Date().getTime();
+    conversationMessage.updatedOnUTC = new Date().getTime();
     conversationMessage.save(function (err, conMes) {
-      if (conMes == null) {
+      if (err) {
 
       }
       else {
-
+        Conversation.findOne({ _id: data._conversationId})
+        .exec(function (err, conversationObject) {
+          ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
+          }).limit(5);
+          var obj = new Object();
+          obj.conversation = conversationObject;
+          obj.messages = conversationMessages;
+          client.emit('onNewConversationReceived', obj);
+        });
       }
     });
     io.sockets["in"](client.room).emit('updatechat', client.username, data);
@@ -226,7 +236,10 @@ io.sockets.on('connection', function (client) {
               var obj = new Object();
               obj.conversation = conversation;
               obj.messages = conversationMessages;
-              objectArray.push(obj);
+              if(obj.messages.length > 0)
+              {
+                objectArray.push(obj);
+              }
               if (counter == conversationList.length - 1) {
                 client.emit('onConversationResponse', objectArray);
               }

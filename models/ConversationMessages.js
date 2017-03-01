@@ -10,8 +10,11 @@ var ConversationMessagesSchema   = new mongoose.Schema({
     _conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation' },
     _messageToUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'EthereumUser' },
     _messageFromUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'EthereumUser' },
+    _messageFromMobile: String,
+    _messageToMobile: String,
     createdOnUTC: Date,
     updatedOnUTC: Date,
+    messageStatus: Number,
     isDeleted: Boolean
 });
 
