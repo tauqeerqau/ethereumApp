@@ -46,6 +46,7 @@ var getChartForDailyTransactionsDataRoute = router.route('/getChartForDailyTrans
 var getTotalDailyGasUsedDataRoute = router.route('/getTotalDailyGasUsedData');
 var getAverageGasLimitChartDataRoute = router.route('/getAverageGasLimitChartData');
 var getSaveNetworkStatsInDatabaseRoute = router.route('/getSaveNetworkStatsInDatabase');
+var postGetUserByContactNumberRoute = router.route('/getUserByContactNumber');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -1108,5 +1109,25 @@ getSaveNetworkStatsInDatabaseRoute.get(function (req, res) {
     });
 });
 
+postGetUserByContactNumberRoute.post(function(req,res){
+    var contactNumber = req.body.contactNumber;
+    contactNumber = "+" + contactNumber;
+    EthereumUser.findOne({ 'userContactNumber': contactNumber }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if(ethereumUser == null)
+        {
+            response.message = "User does not exist";
+            response.code = serverMessage.returnNotFound();
+            response.data = null;
+            res.json(response);
+        }
+        else
+        {
+            response.message = "User Found";
+            response.code = serverMessage.returnSuccess();
+            response.data = ethereumUser;
+            res.json(response);
+        }
+    });
+});
 
 module.exports = router;
