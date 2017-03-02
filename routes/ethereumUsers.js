@@ -17,6 +17,7 @@ var EthereumUserMobileDevices = require('./../models/EthereumUserMobileDevices')
 var TransactionChart = require('./../models/TransactionChart');
 var GasUsedChart = require('./../models/GasUsedChart');
 var AverageGasLimitChart = require('./../models/AverageGasLimitChart');
+var DashboardData = require('./../models/DashboardData');
 
 var multipartMiddleware = multipart();
 
@@ -44,6 +45,7 @@ var getDasboardDataRoute = router.route('/getDasboardData');
 var getChartForDailyTransactionsDataRoute = router.route('/getChartForDailyTransactionsData');
 var getTotalDailyGasUsedDataRoute = router.route('/getTotalDailyGasUsedData');
 var getAverageGasLimitChartDataRoute = router.route('/getAverageGasLimitChartData');
+var getSaveNetworkStatsInDatabaseRoute = router.route('/getSaveNetworkStatsInDatabase');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -865,49 +867,29 @@ function extend(target) {
 }
 
 getDasboardDataRoute.get(function (req, res) {
-    var client = new Client();
-    var urlString = "https://www.etherchain.org/api/basic_stats";
-    var urlStringGasPrice = "https://etherchain.org/api/gasPrice";
-    var urlStringActiveNodeCount = "https://etherchain.org/api/nodes";
-    var urlStringGetTotalSupplyOfEther = "https://api.etherscan.io/api?module=stats&action=ethsupply&apikey=QQBE2GAH8MKB8XVHI8PEYZCXTIEWF4Z11D";
-    var urlStringTotalTransactionCount = "https://etherchain.org/api/txs/count";
-    client.get(urlString, function (data, resp) {
-        var obj = new Object();
-        obj.averageBlockTime = data.data.stats.blockTime;
-        obj.hashRate = data.data.stats.hashRate;
-        obj.lastBlock = data.data.difficulty.number;
-        obj.currentRate = "$" + data.data.price.usd + " @ " + data.data.price.btc;
-        obj.difficulty = data.data.stats.difficulty;
-        obj.uncleRate = data.data.stats.uncle_rate;
-        obj.gasLimit = data.data.difficulty.gasLimit;
-        client.get(urlStringGasPrice, function (dataForGas, resp) {
-            obj.gasPrice = dataForGas.data[0].price;
-            // to convert from wei to gwei
-            obj.gasPrice = obj.gasPrice / 1000000000;
-            obj.gasPrice = obj.gasPrice + " GWEI";
-            client.get(urlStringActiveNodeCount, function (dataForActiveNodeCount, resp) {
-                obj.activeNodeCount = dataForActiveNodeCount.data[0].data.length;
-                client.get(urlStringGetTotalSupplyOfEther, function (dataForTotalSupplyOfEther, resp) {
-                    var totalSupply = dataForTotalSupplyOfEther.result;
-                    totalSupply = totalSupply / 1000000000000000000;
-                    obj.totalSupply = totalSupply;
-                    obj.marketCapacity = totalSupply * data.data.price.usd;
-                    client.get(urlStringTotalTransactionCount, function (dataForTotalTransactionCount, resp) {
-                        obj.totalTransactionCount = dataForTotalTransactionCount.data[0].count;
-                        AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
-                            obj.blockTimeChartData = averageGasLimitChartData;
-                            GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
-                                obj.gasUsedChartData = gasUsedChartData;
-                                TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
-                                    obj.transactionChartData = transactionChartData;
-                                    res.json(obj);
-                                });
-                            });
-                        });
-                    });
-                });
+    DashboardData.findOne({}, null, { sort: { '_id': -1 } }, function (err, dashboardDataObject) {
+    var obj = new Object();
+    obj.averageBlockTime = dashboardDataObject.averageBlockTime;
+    obj.hashRate = dashboardDataObject.hashRate;
+    obj.lastBlock = dashboardDataObject.lastBlock;
+    obj.currentRate = dashboardDataObject.currentRate;
+    obj.difficulty = dashboardDataObject.difficulty;
+    obj.uncleRate = dashboardDataObject.uncleRate;
+    obj.gasLimit = dashboardDataObject.gasLimit;
+    obj.gasPrice = dashboardDataObject.gasPrice;
+    obj.activeNodeCount = dashboardDataObject.activeNodeCount;
+    obj.marketCapacity = dashboardDataObject.marketCapacity;
+    obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
+    AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
+        obj.blockTimeChartData = averageGasLimitChartData;
+        GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
+            obj.gasUsedChartData = gasUsedChartData;
+            TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
+                obj.transactionChartData = transactionChartData;
+                res.json(obj);
             });
         });
+    });
     });
 });
 
@@ -1075,6 +1057,53 @@ getAverageGasLimitChartDataRoute.get(function (req, res) {
             if (line == null) {
                 res.json(dataToSend);
             }
+        });
+    });
+});
+
+getSaveNetworkStatsInDatabaseRoute.get(function (req, res) {
+    var client = new Client();
+    var urlString = "https://www.etherchain.org/api/basic_stats";
+    var urlStringGasPrice = "https://etherchain.org/api/gasPrice";
+    var urlStringActiveNodeCount = "https://etherchain.org/api/nodes";
+    var urlStringGetTotalSupplyOfEther = "https://api.etherscan.io/api?module=stats&action=ethsupply&apikey=QQBE2GAH8MKB8XVHI8PEYZCXTIEWF4Z11D";
+    var urlStringTotalTransactionCount = "https://etherchain.org/api/txs/count";
+    var dashboardData = new DashboardData();
+    DashboardData.remove(function (err) {
+        client.get(urlString, function (data, resp) {
+            dashboardData.averageBlockTime = data.data.stats.blockTime;
+            dashboardData.hashRate = data.data.stats.hashRate;
+            dashboardData.lastBlock = data.data.difficulty.number;
+            dashboardData.currentRate = "$" + data.data.price.usd + " @ " + data.data.price.btc;
+            dashboardData.difficulty = data.data.stats.difficulty;
+            dashboardData.uncleRate = data.data.stats.uncle_rate;
+            dashboardData.gasLimit = data.data.difficulty.gasLimit;
+            client.get(urlStringGasPrice, function (dataForGas, resp) {
+                dashboardData.gasPrice = dataForGas.data[0].price;
+                // to convert from wei to gwei
+                dashboardData.gasPrice = dashboardData.gasPrice / 1000000000;
+                dashboardData.gasPrice = dashboardData.gasPrice + " GWEI";
+                client.get(urlStringActiveNodeCount, function (dataForActiveNodeCount, resp) {
+                    dashboardData.activeNodeCount = dataForActiveNodeCount.data[0].data.length;
+                    client.get(urlStringGetTotalSupplyOfEther, function (dataForTotalSupplyOfEther, resp) {
+                        var totalSupply = dataForTotalSupplyOfEther.result;
+                        totalSupply = totalSupply / 1000000000000000000;
+                        dashboardData.totalSupply = totalSupply;
+                        dashboardData.marketCapacity = totalSupply * data.data.price.usd;
+                        client.get(urlStringTotalTransactionCount, function (dataForTotalTransactionCount, resp) {
+                            dashboardData.totalTransactionCount = dataForTotalTransactionCount.data[0].count;
+                            dashboardData.save(function (err, dashboardDataObject) {
+                                if (err) {
+                                    res.json(err);
+                                }
+                                else {
+                                    res.json(dashboardDataObject);
+                                }
+                            });
+                        });
+                    });
+                });
+            });
         });
     });
 });
