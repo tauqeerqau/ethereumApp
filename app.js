@@ -222,7 +222,7 @@ io.sockets.on('connection', function (client) {
     });
     io.sockets["in"](client.room).emit('updatechat', client.username, data);
   });
-  client.on('sendConversation', function (token,pageNumber) {
+  client.on('sendConversation', function (token, pageNumber) {
     console.log("User token is " + token);
     console.log("Page Number is " + pageNumber);
     EthereumUser.findOne({ 'ethereumUserApplicationToken': token }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
@@ -230,21 +230,26 @@ io.sockets.on('connection', function (client) {
         Conversation.find({ $or: [{ user1Mobile: ethereumUser.userContactNumber }, { user2Mobile: ethereumUser.userContactNumber }] }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationList) {
           var objectArray = [];
           var counter = 0;
-          for (var i = 0; i < conversationList.length; i++) {
-            var conversation = conversationList[i];
-            ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
-              var obj = new Object();
-              obj.conversation = conversation;
-              obj.messages = conversationMessages;
-              if(obj.messages.length > 0)
-              {
-                objectArray.push(obj);
-              }
-              if (counter == conversationList.length - 1) {
-                client.emit('onConversationResponse', objectArray);
-              }
-              counter++;
-            }).limit(5);
+          if (conversationList.length.length > 0) {
+            for (var i = 0; i < conversationList.length; i++) {
+              var conversation = conversationList[i];
+              ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
+                var obj = new Object();
+                obj.conversation = conversation;
+                obj.messages = conversationMessages;
+                if (obj.messages.length > 0) {
+                  objectArray.push(obj);
+                }
+                if (counter == conversationList.length - 1) {
+                  client.emit('onConversationResponse', objectArray);
+                }
+                counter++;
+              }).limit(5);
+            }
+          }
+          else
+          {
+            client.emit('onConversationResponse', conversationList);
           }
         }).limit(20).skip(pageNumber * 20);
       }
