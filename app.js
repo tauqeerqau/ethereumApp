@@ -236,7 +236,7 @@ io.sockets.on('connection', function (client) {
               ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
                 var obj = new Object();
                 obj.conversation = conversation;
-				// for testing purpose start
+				// a for testing purpose start
                 var messagesToSend = [];
                 var message = new ConversationMessages();
                 message.messageText = "Hello, hi";
