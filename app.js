@@ -249,7 +249,8 @@ io.sockets.on('connection', function (client) {
           }
           else
           {
-            client.emit('onConversationResponse', conversationList);
+			  var array = [];
+            client.emit('onConversationResponse', array);
           }
         }).limit(20).skip(pageNumber * 20);
       }
