@@ -236,7 +236,23 @@ io.sockets.on('connection', function (client) {
               ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
                 var obj = new Object();
                 obj.conversation = conversation;
-                obj.messages = conversationMessages;
+				// for testing purpose start
+                var messagesToSend = [];
+                var message = new ConversationMessages();
+                message.messageText = "Hello, hi";
+                message._messageFromUserId = conversation._messageFromUserId;
+                message._messageToUserId = conversation._messageToUserId;
+                message.createdOnUTC = new Date();
+                var message1 = new ConversationMessages();
+                message1.messageText = "fine fine";
+                message1._messageFromUserId = conversation._messageFromUserId;
+                message1._messageToUserId = conversation._messageToUserId;
+                message1.createdOnUTC = new Date();
+                messagesToSend.push(message);
+                messagesToSend.push(message1);
+                obj.messages = messagesToSend;
+                // for testing purpose end
+                //obj.messages = conversationMessages;
                 if (obj.messages.length > 0) {
                   objectArray.push(obj);
                 }
