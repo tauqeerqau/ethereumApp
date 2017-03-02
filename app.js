@@ -230,7 +230,7 @@ io.sockets.on('connection', function (client) {
         Conversation.find({ $or: [{ user1Mobile: ethereumUser.userContactNumber }, { user2Mobile: ethereumUser.userContactNumber }] }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationList) {
           var objectArray = [];
           var counter = 0;
-          if (conversationList.length.length > 0) {
+          if (conversationList.length > 0) {
             for (var i = 0; i < conversationList.length; i++) {
               var conversation = conversationList[i];
               ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
