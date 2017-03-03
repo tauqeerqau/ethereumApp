@@ -881,6 +881,7 @@ getDasboardDataRoute.get(function (req, res) {
     obj.activeNodeCount = dashboardDataObject.activeNodeCount;
     obj.marketCapacity = dashboardDataObject.marketCapacity;
     obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
+	obj.totalSupply = dashboardDataObject.totalSupply;
     AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
         obj.blockTimeChartData = averageGasLimitChartData;
         GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
