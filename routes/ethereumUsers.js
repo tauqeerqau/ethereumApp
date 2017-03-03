@@ -889,9 +889,9 @@ getDasboardDataRoute.get(function (req, res) {
             TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
                 obj.transactionChartData = transactionChartData;
                 res.json(obj);
-            });
-        });
-    });
+            }).limit(10);
+        }).limit(10);
+    }).limit(10);
     });
 });
 
