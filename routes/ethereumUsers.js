@@ -894,7 +894,7 @@ getDasboardDataRoute.get(function (req, res) {
     }).limit(10);
     });
 });
-
+//test
 getChartForDailyTransactionsDataRoute.get(function (req, res) {
     var http = require('http');
     var fs = require('fs');
