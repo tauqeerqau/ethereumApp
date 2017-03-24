@@ -881,7 +881,6 @@ getDasboardDataRoute.get(function (req, res) {
     obj.activeNodeCount = dashboardDataObject.activeNodeCount;
     obj.marketCapacity = dashboardDataObject.marketCapacity;
     obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
-	obj.totalSupply = dashboardDataObject.totalSupply;
     AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
         obj.blockTimeChartData = averageGasLimitChartData;
         GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
@@ -889,12 +888,12 @@ getDasboardDataRoute.get(function (req, res) {
             TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
                 obj.transactionChartData = transactionChartData;
                 res.json(obj);
-            }).limit(10);
-        }).limit(10);
-    }).limit(10);
+            });
+        });
+    });
     });
 });
-//test
+
 getChartForDailyTransactionsDataRoute.get(function (req, res) {
     var http = require('http');
     var fs = require('fs');

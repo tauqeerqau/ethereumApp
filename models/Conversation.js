@@ -10,12 +10,14 @@ var ConversationSchema   = new mongoose.Schema({
     username2:String,
     user1Mobile:String,
     user2Mobile:String,
-    createdOnUTC: Date,
-    updatedOnUTC: Date,
-    conversationReadByUser1: Boolean,
-    conversationReadByUser2: Boolean,
-    isDeleted: Boolean
+    createdOnUTC:  { type: Date, default: Date.now },
+    updatedOnUTC:  { type: Date, default: Date.now },
+    conversationSyncByUser1: { type: Boolean, default: false },
+    conversationSyncByUser2: { type: Boolean, default: false },
+    isDeletedByUser1:  { type: Boolean, default: false },
+    isDeletedByUser2: { type: Boolean, default: false }
 });
 
+ConversationSchema.index({user1Mobile:1,user2Mobile:1}, { "unique": true })
 // Export the Mongoose model
 module.exports = mongoose.model('Conversation', ConversationSchema);
