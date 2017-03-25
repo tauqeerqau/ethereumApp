@@ -198,6 +198,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                 if (ethereumUser != null) {
                     var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
                     if (validate == true) {
+						console.log("email verified"+ethereumUser.isEmailVerified);
                         //here first we check either email is verified otherwise we return error
                         //and told user to go to his inbox first
                         if (ethereumUser.isEmailVerified == false) {
