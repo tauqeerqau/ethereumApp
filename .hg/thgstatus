@@ -1,5 +1,6 @@
 m
 m.vscode
+mbin
 mmodels
 mnode_modules/.bin
 mnode_modules/abbrev
@@ -921,4 +922,6 @@ mnode_modules/xmlhttprequest-ssl/tests
 mnode_modules/xtend
 mnode_modules/yeast
 mpublic
+mpublic/stylesheets
 mroutes
+mviews

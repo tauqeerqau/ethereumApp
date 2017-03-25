@@ -9,6 +9,7 @@ var sinchAuth = require('sinch-auth');
 var sinchSms = require('sinch-messaging');
 var Client = require('node-rest-client').Client;
 var dateTime = require('node-datetime');
+const nodemailer = require('nodemailer');
 
 var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
@@ -47,6 +48,8 @@ var getTotalDailyGasUsedDataRoute = router.route('/getTotalDailyGasUsedData');
 var getAverageGasLimitChartDataRoute = router.route('/getAverageGasLimitChartData');
 var getSaveNetworkStatsInDatabaseRoute = router.route('/getSaveNetworkStatsInDatabase');
 var postGetUserByContactNumberRoute = router.route('/getUserByContactNumber');
+var postVerifiedUserEmail = router.route('/verifyUserEmail');
+
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -83,6 +86,13 @@ var ethereumUserContactSyncing = new EthereumUserContactSyncing(
 
     });
 
+var transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'darwineth776@gmail.com',
+        pass: 'darwinethereum776'
+    }
+});
 // Connection URL. This is where your mongodb server is running.
 
 var url = utility.getURL();
@@ -188,6 +198,15 @@ postEthereumUserLoginRoute.post(function (req, res) {
                 if (ethereumUser != null) {
                     var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
                     if (validate == true) {
+                        //here first we check either email is verified otherwise we return error
+                        //and told user to go to his inbox first
+                        if (ethereumUser.isEmailVerified == false) {
+                            response.message = "User email not verified";
+                            response.code = serverMessage.returnEmailNotVerified();
+                            response.data = null;
+                            res.json(response);
+                            return;
+                        }
                         var ethereumUserMobileDevices = new EthereumUserMobileDevices();
                         ethereumUserMobileDevices.userName = ethereumUser.userName;
                         ethereumUserMobileDevices._userId = ethereumUser._id;
@@ -869,28 +888,28 @@ function extend(target) {
 
 getDasboardDataRoute.get(function (req, res) {
     DashboardData.findOne({}, null, { sort: { '_id': -1 } }, function (err, dashboardDataObject) {
-    var obj = new Object();
-    obj.averageBlockTime = dashboardDataObject.averageBlockTime;
-    obj.hashRate = dashboardDataObject.hashRate;
-    obj.lastBlock = dashboardDataObject.lastBlock;
-    obj.currentRate = dashboardDataObject.currentRate;
-    obj.difficulty = dashboardDataObject.difficulty;
-    obj.uncleRate = dashboardDataObject.uncleRate;
-    obj.gasLimit = dashboardDataObject.gasLimit;
-    obj.gasPrice = dashboardDataObject.gasPrice;
-    obj.activeNodeCount = dashboardDataObject.activeNodeCount;
-    obj.marketCapacity = dashboardDataObject.marketCapacity;
-    obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
-    AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
-        obj.blockTimeChartData = averageGasLimitChartData;
-        GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
-            obj.gasUsedChartData = gasUsedChartData;
-            TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
-                obj.transactionChartData = transactionChartData;
-                res.json(obj);
+        var obj = new Object();
+        obj.averageBlockTime = dashboardDataObject.averageBlockTime;
+        obj.hashRate = dashboardDataObject.hashRate;
+        obj.lastBlock = dashboardDataObject.lastBlock;
+        obj.currentRate = dashboardDataObject.currentRate;
+        obj.difficulty = dashboardDataObject.difficulty;
+        obj.uncleRate = dashboardDataObject.uncleRate;
+        obj.gasLimit = dashboardDataObject.gasLimit;
+        obj.gasPrice = dashboardDataObject.gasPrice;
+        obj.activeNodeCount = dashboardDataObject.activeNodeCount;
+        obj.marketCapacity = dashboardDataObject.marketCapacity;
+        obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
+        AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
+            obj.blockTimeChartData = averageGasLimitChartData;
+            GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
+                obj.gasUsedChartData = gasUsedChartData;
+                TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
+                    obj.transactionChartData = transactionChartData;
+                    res.json(obj);
+                });
             });
         });
-    });
     });
 });
 
@@ -1109,19 +1128,17 @@ getSaveNetworkStatsInDatabaseRoute.get(function (req, res) {
     });
 });
 
-postGetUserByContactNumberRoute.post(function(req,res){
+postGetUserByContactNumberRoute.post(function (req, res) {
     var contactNumber = req.body.contactNumber;
     contactNumber = "+" + contactNumber;
     EthereumUser.findOne({ 'userContactNumber': contactNumber }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
-        if(ethereumUser == null)
-        {
+        if (ethereumUser == null) {
             response.message = "User does not exist";
             response.code = serverMessage.returnNotFound();
             response.data = null;
             res.json(response);
         }
-        else
-        {
+        else {
             response.message = "User Found";
             response.code = serverMessage.returnSuccess();
             response.data = ethereumUser;
@@ -1129,5 +1146,39 @@ postGetUserByContactNumberRoute.post(function(req,res){
         }
     });
 });
+
+//here we define user mail verified
+postVerifiedUserEmail.get(function (req, res) {
+    var userEmail = req.query.email;
+    //we find one and then we will save again that email verified
+    EthereumUser.findOne({ 'userEmail': userEmail }, null,
+        { sort: { '_id': -1 } }, function (err, ethereumUser) {
+            ethereumUser.isEmailVerified=true;
+            ethereumUser.save();
+        });
+
+});//end of route for verified email
+//send email for verification to user when signup
+function sendEmail(userEmail) {
+
+    var invitationFunction = "http://etherapp.azurewebsites.net/#/verifyUserEmail?email="
+        + userEmail;//+ "&userCode=" + userCode for security reason implementation
+    //fullUrl = fullUrl + invitationFunction;
+    var text = 'Your Verification Link is  : ' + invitationFunction;
+    let mailOptions = {
+        from: '"Darwin Team" <darwineth776@gmail.com>', // sender address
+        to: userEmail, // list of receivers
+        subject: 'Activation Link', // Subject line
+        text: text, // plain text body
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            response.code = StatusCodeEnum.FAILURE;
+            response.message = StatusMessages.FAILURE;
+            response.data = error;
+            //res.json(response);
+        }
+    });
+}
 
 module.exports = router;
