@@ -23,8 +23,8 @@ var Conversation = require('./models/Conversation');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 //var app = express();
-server.listen(3000);
-//server.listen(process.env.PORT);
+//server.listen(process.env.PORT||3000);
+server.listen(process.env.PORT);
 //for socket IO page
 app.get('/', function (req, res) {
   res.json("Data");
