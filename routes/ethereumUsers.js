@@ -206,8 +206,9 @@ postEthereumUserLoginRoute.post(function (req, res) {
                             response.code = serverMessage.returnEmailNotVerified();
                             response.data = null;
                             res.json(response);
-                            return;
+             
                         }
+						else{
                         var ethereumUserMobileDevices = new EthereumUserMobileDevices();
                         ethereumUserMobileDevices.userName = ethereumUser.userName;
                         ethereumUserMobileDevices._userId = ethereumUser._id;
@@ -244,6 +245,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                 }).limit(5);
                             }
                         });
+						}//end pf else for email verified
                     }
                     else {
                         response.message = "User Password is incorrect";
