@@ -201,7 +201,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
 						console.log("email verified"+ethereumUser.isEmailVerified);
                         //here first we check either email is verified otherwise we return error
                         //and told user to go to his inbox first
-                        if (!ethereumUser.isEmailVerified) {
+                        if (ethereumUser.isEmailVerified == false) {
                             response.message = "User email not verified";
                             response.code = serverMessage.returnEmailNotVerified();
                             response.data = null;
