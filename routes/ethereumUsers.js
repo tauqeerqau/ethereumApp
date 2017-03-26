@@ -184,10 +184,10 @@ getEthereumUserRoute.get(function (req, res) {
 
 postEthereumUserLoginRoute.post(function (req, res) {
 	  response.message = "User email not verified";
-                            response.code = serverMessage.returnEmailNotVerified();
-                            response.data = null;
-                            res.json(response);
-							return;
+      response.code = serverMessage.returnEmailNotVerified();
+      response.data = null;
+      res.json(response);
+		return;
     if (utility.validateEmail(req.body.userName) == true) {
         EthereumUser.findOne({ 'userEmail': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
             if (err) {
