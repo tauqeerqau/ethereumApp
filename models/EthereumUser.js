@@ -24,8 +24,7 @@ var UserSchema   = new mongoose.Schema({
     ethereumUserLoginDetail: Object,
     ethereumUserDoubleAuthenticationMode: Number,
     ethereumUserNotificationStatus: Number,
-    userGCM: String,
-	isEmailVerified: {type:Boolean ,default:false}
+    userGCM: String
 });
 
 // Export the Mongoose model

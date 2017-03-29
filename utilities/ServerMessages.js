@@ -21,9 +21,6 @@ ServerMessages.prototype.returnNotFound=function() {
   return 400;
 }
 
-ServerMessages.prototype.returnEmailNotVerified=function() {
-  return 408;
-}   
 ServerMessages.prototype.returnUserAlreadyExists=function() {
   return 500;
 }    
