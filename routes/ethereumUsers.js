@@ -1205,7 +1205,7 @@ postForgotPasswordRoute.post(function (req, res) {
                     response.message = "Success";
                     response.code = serverMessage.returnSuccess();
                     response.data = null;
-                    res.json(response);
+   //                 res.json(response);
                 }
             });
         }
