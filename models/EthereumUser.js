@@ -25,7 +25,7 @@ var UserSchema = new mongoose.Schema({
     ethereumUserDoubleAuthenticationMode: Number,
     ethereumUserNotificationStatus: Number,
     userGCM: String,
-    idEmailVerified: { type: Boolean, default: false },
+    isEmailVerified: { type: Boolean, default: false },
     createdOnUTC: String,
     updatedOnUTC: String,
     userGUID: String
