@@ -209,7 +209,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                     res.json(response);
                 }
                 if (ethereumUser != null) {
-                    if (ethereumUser.idEmailVerified == false) {
+                    if (ethereumUser.isEmailVerified == false) {
                         response.message = "User Email Not Verified";
                         response.code = serverMessage.returnEmailNotVerified();
                         response.data = null;
@@ -1191,10 +1191,10 @@ postForgotPasswordRoute.post(function (req, res) {
             };
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
-                    response.code = StatusCodeEnum.FAILURE;
-                    response.message = StatusMessages.FAILURE;
+                    response.code = serverMessage.returnFailure();
+                    response.message = "FAILURE";
                     response.data = error;
-                    //res.json(response);
+                    res.json(response);
                 }
             });
             ethereumUser.save(function (err) {
