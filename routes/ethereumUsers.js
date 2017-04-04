@@ -216,6 +216,8 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         res.json(response);
                         return;
                     }
+                    else if (ethereumUser.isEmailVerified == true)
+                    {
                     var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
                     if (validate == true) {
                         var ethereumUserMobileDevices = new EthereumUserMobileDevices();
@@ -252,7 +254,9 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                 }).limit(5);
                             }
                         });
-                    } else {
+                    }
+                 }
+                  else {
                         response.message = "User Password is incorrect";
                         response.code = serverMessage.returnPasswordMissMatch();
                         response.data = null;
