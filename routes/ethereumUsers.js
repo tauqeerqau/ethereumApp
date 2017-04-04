@@ -277,6 +277,15 @@ postEthereumUserLoginRoute.post(function (req, res) {
                     res.json(response);
                 }
                 if (ethereumUser != null) {
+                    if (ethereumUser.isEmailVerified == false) {
+                        response.message = "User Email Not Verified";
+                        response.code = serverMessage.returnEmailNotVerified();
+                        response.data = null;
+                        res.json(response);
+                        return;
+                    }
+                    else if (ethereumUser.isEmailVerified == false)
+                    {
                     var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
                     if (validate == true) {
                         var ethereumUserMobileDevices = new EthereumUserMobileDevices();
@@ -349,6 +358,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         res.json(response);
                     }
                 }
+            }
             }
         });
     }
