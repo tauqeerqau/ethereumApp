@@ -1185,7 +1185,7 @@ postForgotPasswordRoute.post(function (req, res) {
             var text = 'Your Password for Login is   : ' + randomStringPassword;
             let mailOptions = {
                 from: '"Ethereum Invitation" <testingideofuzion@gmail.com>', // sender address
-                to: ethereumUser.email, // list of receivers
+                to: ethereumUser.userEmail, // list of receivers
                 subject: 'Invitation Link', // Subject line
                 text: text, // plain text body
             };
@@ -1205,7 +1205,7 @@ postForgotPasswordRoute.post(function (req, res) {
                     response.message = "Success";
                     response.code = serverMessage.returnSuccess();
                     response.data = null;
-   //                 res.json(response);
+                    res.json(response);
                 }
             });
         }
