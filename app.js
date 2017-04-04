@@ -30,6 +30,7 @@ mongoose.Promise = require('bluebird');
 server.listen(process.env.PORT);
 //for socket IO page
 app.get('/', function (req, res) {
+<<<<<<< HEAD
   var serverMessage = new ServerMessage({
 });
     var guid = req.query.userGUID;
@@ -65,6 +66,9 @@ app.get('/', function (req, res) {
             res.json(response.message);
         }
     });
+=======
+  res.json("Data");
+>>>>>>> aa6fd23e0523da68dfb1b62118e651afb6651f49
   // res.sendfile(__dirname + '/index.html');
 });
 //

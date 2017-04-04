@@ -883,6 +883,7 @@ function extend(target) {
 
 getDasboardDataRoute.get(function (req, res) {
     DashboardData.findOne({}, null, { sort: { '_id': -1 } }, function (err, dashboardDataObject) {
+<<<<<<< HEAD
         var obj = new Object();
         obj.averageBlockTime = dashboardDataObject.averageBlockTime;
         obj.hashRate = dashboardDataObject.hashRate;
@@ -905,6 +906,30 @@ getDasboardDataRoute.get(function (req, res) {
                 });
             });
         });
+=======
+    var obj = new Object();
+    obj.averageBlockTime = dashboardDataObject.averageBlockTime;
+    obj.hashRate = dashboardDataObject.hashRate;
+    obj.lastBlock = dashboardDataObject.lastBlock;
+    obj.currentRate = dashboardDataObject.currentRate;
+    obj.difficulty = dashboardDataObject.difficulty;
+    obj.uncleRate = dashboardDataObject.uncleRate;
+    obj.gasLimit = dashboardDataObject.gasLimit;
+    obj.gasPrice = dashboardDataObject.gasPrice;
+    obj.activeNodeCount = dashboardDataObject.activeNodeCount;
+    obj.marketCapacity = dashboardDataObject.marketCapacity;
+    obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
+    AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
+        obj.blockTimeChartData = averageGasLimitChartData;
+        GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
+            obj.gasUsedChartData = gasUsedChartData;
+            TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
+                obj.transactionChartData = transactionChartData;
+                res.json(obj);
+            });
+        });
+    });
+>>>>>>> aa6fd23e0523da68dfb1b62118e651afb6651f49
     });
 });
 
