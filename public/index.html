@@ -4,8 +4,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
     <script>
 
-        //var socket = io().connect('http://localhost:3000/');
-		var socket = io().connect('http://etherapp.azurewebsites.net/');
+        var socket = io().connect('http://localhost:3000/');
 
         socket.on('connect', function () {
             var data = new Object();
@@ -61,12 +60,12 @@
                 data._messageToUserId = '58b31593a45de2112032ee8f';
                 data._messageFromUserId = '58af39ccbe2d4e1c90dd107b';
                 //socket.emit('sendchat', data);
-                data.user1MobileNumber = "923315330709";
+                data.user1MobileNumber = "9231112345050";
                 data.user2MobileNumber = "923077402605";
                 //socket.emit('createRoom', data);
-                socket.emit('sendConversation', 356942,0);
+                //socket.emit('sendConversation', 705634,0);
                 data.user1Id = "587a63e9f4a8f119d8ee9db8";
-                //socket.emit('sendConversation',"569115,0");
+                socket.emit('sendConversation',705634,0);
                 $('#conversation').append('<b>' + username + ':</b> ' + data + '<br>');
             });
         });

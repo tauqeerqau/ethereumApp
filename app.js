@@ -9,23 +9,64 @@ var bodyParser = require('body-parser');
 var multipart = require('connect-multiparty');
 var multer = require('multer');
 var fs = require("fs");
+var hashes = require('hashes');
+var HashMap = require('hashmap');
 // sever object
 var server = require('http').Server(app);
 //
 var index = require('./routes/index');
+var ServerMessage = require('./utilities/ServerMessages');
 var users = require('./routes/users');
 var ethereumUsers = require('./routes/ethereumUsers');
+var ethereumUserTransactions = require('./routes/ethereumUserTransactions');
+var Response = require('./utilities/response')
 
 var EthereumUser = require('./models/EthereumUser');
 var Conversation = require('./models/Conversation');
-
+var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 //var app = express();
 //server.listen(3000);
 server.listen(process.env.PORT);
 //for socket IO page
-/*app.get('/', function (req, res) {
-    res.sendfile(__dirname + '/index.html');
-});*/
+app.get('/', function (req, res) {
+  var serverMessage = new ServerMessage({
+});
+    var guid = req.query.userGUID;
+    var response = new Response();
+    var emailVerifiedTime = Math.floor(new Date() / 1000);
+    EthereumUser.findOne({ 'userEmail': req.query.email }, function (err, ethereumUser) {
+        if(ethereumUser == null)
+        {
+            response.message = "User does not exist";
+            response.code = serverMessage.returnNotFound();
+            response.data = null;
+            res.json(response.message);
+        }
+        else if(ethereumUser.updatedOnUTC+86400 <emailVerifiedTime)
+        {
+            response.message = "Link is Expired";
+            response.code = serverMessage.returnLinkExpired();
+            response.data = null;
+            res.json(response.message);
+        }
+        else if (guid != ethereumUser.userGUID)
+        {
+            response.message = "GUIS is Miss Macthed";
+            response.code = serverMessage.returnLinkExpired();
+            response.data = null;
+            res.json(response.message);
+        }
+        else
+        {
+            response.message = "Success";
+            response.code = serverMessage.returnSuccess();
+            response.data = null;
+            res.json(response.message);
+        }
+    });
+  // res.sendfile(__dirname + '/index.html');
+});
 //
 var Conversation = require('./models/Conversation');
 var ConversationMessages = require('./models/ConversationMessages');
@@ -46,9 +87,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-app.use('/', index);
+//app.use('/', index);
 app.use('/users', users);
 app.use('/ethereumUsers', ethereumUsers);
+app.use('/ethereumUserTransactions',ethereumUserTransactions);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -62,216 +104,224 @@ app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
-
+  console.log("in 500 error");
   // render the error page
   res.status(err.status || 500);
   res.render('error');
 });
 var rooms = [];
 var usernames = [];
+var userMobileList = [];
+var userHashMaps = new HashMap();
+//ConversationMessages.remove({},function(err,ree){});
 var io = require('socket.io')(server);
 io.sockets.on('connection', function (client) {
-  client.on('createRoom', function (data) {//Mobile App will send Room Name
-    var user1MobileNumber = data.user1MobileNumber;
-    var user2MobileNumber = data.user2MobileNumber;
-    user1MobileNumber = "+" + user1MobileNumber;
-    user2MobileNumber = "+" + user2MobileNumber;
-    Conversation.findOne({ user1Mobile: user1MobileNumber, user2Mobile: user2MobileNumber })
-      .exec(function (err, conversationObject) {
-        if(err)
-        {
-          console.log(err);
-        }
-        if (conversationObject == null) {
-          Conversation.findOne({ user1Mobile: user2MobileNumber, user2Mobile: user1MobileNumber })
-            .exec(function (err, conversationObject) {
-              if (conversationObject == null) {
-                var conversation = new Conversation();
-                conversation.user1Mobile = user1MobileNumber;
-                conversation.user2Mobile = user2MobileNumber;
-                conversation.createdOnUTC = new Date().getTime();
-                conversation.updatedOnUTC = new Date().getTime();
-                conversation.save(function (err, conversationSaved) {
-                  var flag = false;
-                  for (var i = 0; i < rooms.length; i++) {
-                    if (rooms[i] == conversationSaved._id) {
-                      flag = true;
+  console.log(client.id);
+  client.on('', function () {
+
+  });
+  //Creating room by concating both users mobile numbers.
+  client.on('createRoom', function (userToken, userMobileNumberFrom, userMobileNumberTo) {
+    //checking whether a room exists or not
+    var isRoomExist = rooms.find(x => x == userMobileNumberFrom + userMobileNumberTo || x == userMobileNumberTo + userMobileNumberFrom);
+    if (!isRoomExist) {
+      rooms.push(userMobileNumberFrom + userMobileNumberTo);
+    }
+    //assigning room to client
+    client.room = userMobileNumberFrom + userMobileNumberTo;
+    //joining the existing room on the socket
+    client.join(userMobileNumberFrom + userMobileNumberTo);
+    //emiting the room Id to the client App
+    client.emit('roomId', userMobileNumberFrom + userMobileNumberTo);
+  });
+  //Switihing Room 
+  client.on('switchRoom', function (userToken, userMobileNumberFrom, userMobileNumberTo) {
+    //Leaving the Client's current room
+    client.leave(client.room);
+    var isRoomExist = rooms.find(x => x == userMobileNumberFrom + userMobileNumberTo || x == userMobileNumberTo + userMobileNumberFrom);
+    console.log(isRoomExist);
+    if (isRoomExist) {
+      console.log("1");
+      //Joining the new room
+      client.room = isRoomExist;
+      client.join(isRoomExist);
+      client.emit('onRoomSet', isRoomExist);
+    }
+    else {
+      console.log("3");
+      rooms.push(userMobileNumberFrom + userMobileNumberTo);
+      client.room = userMobileNumberFrom + userMobileNumberTo;
+      client.join(userMobileNumberFrom + userMobileNumberTo);
+      client.emit('onRoomSet', userMobileNumberFrom + userMobileNumberTo);
+    }
+  });
+  client.on('mnb', function () {
+    console.log("Pong received from client");
+  });
+  //Sending Conversation
+  client.on('sendConversation', function (userToken, userMobile, isDbNotEmpty) {//client ask for conversation list 
+    //Check usermobile in db either as user1mobile or at user2Mobile
+    userHashMaps.set(userMobile, client.id);
+    client.userMobile = userMobile;
+    console.log(client.id);
+    //sendMessageToOtherUser(userMobile);
+    //***************** */
+    Conversation.find({ $or: [{ user1Mobile: userMobile }, { user2Mobile: userMobile }] }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationList) {
+      var objectArray = [];//this arraty to push messages
+      if (conversationList != null) {
+        if (conversationList.length > 0) {
+          var count = 0;
+          for (var i = 0; i < conversationList.length; i++) {
+            var conversation = conversationList[i];
+            if (isDbNotEmpty == true) {
+              //here we check that is current conversation is synced by user or not
+              var requestingMobileNumber = userMobile;
+              /*if (userMobile.toString().trim() === conversation.user1Mobile) {
+                if (conversation.conversationSyncByUser1 === true)
+                  continue;
+              }//end of if for requesting persion is user1Mobile
+              else {
+                if (conversation.conversationSyncByUser2 === true)
+                  continue;
+              }*///end of else
+            }//end of if  for db is not empty from mobile
+            // 
+            console.log("sendConversation Called :and total conversations for users " + conversationList.length);
+            var conversMessageProcessing = function (conversation) {
+              ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'createdOnUTC': 'descending' } },
+                function (err, conversationMessages) {
+                  console.log(conversation.user1Mobile + ":" + conversation.user2Mobile)
+                  if (conversationMessages != null && conversationMessages.length > 0) {
+                    count++;
+                    console.log("conversation message length" + conversationMessages.length);
+                    var obj = getConversationObjForUserToSend(userMobile, conversation, conversationMessages[0]);
+                    obj.messages = getMessageObjForUserToSend(conversationMessages);
+                    console.log("conversationResponse" + obj.messages);
+                    objectArray.push(obj);
+                    //this is for sending only once response to mobile side
+                    if (count >= conversationList.length) {
+                      client.emit('onConversationResponse', objectArray);
                     }
+                  }//end of if for err obj null
+                  else {//wherr err not null
+                    console.log("error " + err);
                   }
-                  if (flag === false) {
-                    rooms.push(conversationSaved._id);
-                  }
-                  client.room = conversationSaved._id;
-                  client.emit('onRoomSet', conversationSaved._id);
-                });
-              }
-              else {
-                var flag = false;
-                for (var i = 0; i < rooms.length; i++) {
-                  if (rooms[i] == conversationObject._id) {
-                    flag = true;
-                  }
-                }
-                if (flag === false) {
-                  rooms.push(conversationObject._id);
-                }
-                client.room = conversationObject._id;
-                client.emit('onRoomSet', conversationObject._id);
-              }
-            });
-        }
-        else {
-          var flag = false;
-          for (var i = 0; i < rooms.length; i++) {
-            if (rooms[i] == conversationObject._id) {
-              flag = true;
-            }
-          }
-          if (flag === false) {
-            rooms.push(conversationObject._id);
-          }
-          client.room = conversationObject._id;
-          client.emit('onRoomSet', conversationObject._id);
-        }
-      });
-  });
-  client.on('adduser', function (data) {// IOS will send { id: 1, name: 'ali', _roomId = '', roomName='' }
-    var conversation = new Conversation();
-    var date = new Date();
-    console.log(data);
-    client.username = data;
-    client.room = 'Lobby';
-    client.emit('updatechat', 'SERVER', 'you have connected to ' + client.room);
-    client.broadcast.to(client.room).emit('updatechat', 'SERVER', data + ' has connected to this room');
-    Conversation.findOne({ user1Id: data.user1Id, user2Id: data.user2Id })
-      .exec(function (err, conversationObject) {
-        if (err) {
-          res.json(err);
-        }
-        else {
-          Conversation.findOne({ user1Id: data.user1Id, user2Id: data.user2Id })
-            .exec(function (err, conversationObject) {
-              if (err) {
+                }).limit(20);
+            }//endo f fucntion proccsing of conversation messages
+            conversMessageProcessing(conversation);
+          }//end of loop of conversatrion lenth
+        }//end of if for conversation list contain messages more than 0
+      }
+      //first find all messages which are not delivered
+      ConversationMessages.find({ $and: [{ _messageFromMobile: userMobile }, { userMessageFromDeliverStatus: false }] }, null, { sort: { 'updatedOnUTC': -1 } })
+      .exec(function (err, messageList) {
+        var allMessagesServerIds = [];
+        var orignalSenderOfMessages = "";
+        if (messageList != null) {
+          messageList.forEach(function (message) {
+            message.userMessageFromDeliverStatus = true;
+            orignalSenderOfMessages = message._messageFromMobile;
+            allMessagesServerIds.push(message._id);
+            message.save();
+          });//end of foreach
 
-              }
-              if (conversationObject == null) {
-                conversation._user1Id = data.user1Id;
-                conversation._user2Id = data.user2Id;
-                conversation.username1 = data.username1;
-                conversation.username2 = data.username2;
-                conversation.createdOnUTC = date;
-                conversation.updatedOnUTC = date;
-                conversation.isDeleted = false;
-                conversation.save(function (err) {
-                  if (err) {
-
-                  }
-                  else {
-                    client.username = data.name;
-                    client.room = data.roomName;
-                    usernames[data.name] = data.name;
-                    client.join(data.roomName);
-                    client.emit('updatechat', 'SERVER', 'you have connected to ' + data.roomName);
-                    client.broadcast.to('Lobby').emit('updatechat', 'SERVER', data.name + ' has connected to this room');
-                    client.emit('updaterooms', rooms, data.roomName);
-                    client.emit('conversationId', conversation._id);
-                    //BotWelcomeMessage(data, date);
-                  }
-                });
-              }
-              else {
-                client.username = data.username;
-                client.room = data.roomName;
-                usernames[data.name] = data.name;
-                client.join(data.roomName);
-                client.emit('updatechat', 'SERVER', 'you have connected to ' + data.roomName);
-                client.broadcast.to('Lobby').emit('updatechat', 'SERVER', data.name + ' has connected to this room');
-                client.emit('updaterooms', rooms, data.roomName);
-                client.emit('conversationId', conversationObject._id);
-              }
-            });
+        }
+        console.log("all message server ids" + allMessagesServerIds);
+        io.sockets["in"](client.room).emit('onAndroidClientMsgAcknowledge', allMessagesServerIds);
+        var clientIdForOtherUser = userHashMaps.get(orignalSenderOfMessages);
+        if (clientIdForOtherUser != null && clientIdForOtherUser.length > 0) {
+          io.sockets["in"](client.room).emit('onAndroidClientMsgAcknowledge', allMessagesServerIds);
         }
       });
 
-  });
-  client.on('sendchat', function (data) {//IOS will send Room Name
-    console.log(data);
-    var conversationMessage = new ConversationMessages();
-    conversationMessage.messageType = data.messageType;
-    conversationMessage.messageText = data.messageText;
-    conversationMessage._conversationId = data._conversationId;
-    conversationMessage._messageToMobile = data._messageToMobile;
-    conversationMessage._messageFromMobile = data.__messageFromMobile;
-    conversationMessage.createdOnUTC = new Date().getTime();
-    conversationMessage.updatedOnUTC = new Date().getTime();
-    conversationMessage.save(function (err, conMes) {
-      if (err) {
 
+    });//end of conversation find from db
+
+  });//end of sendConversation function
+  //this is to set convers status synched
+  client.on('conversationAcknoledge', function (token, userMobile) {
+    console.log("conversationAcknoledge event for " + userMobile);
+    setUserConversationStatus(userMobile, true);//here we call to set all function setting conversation true
+  });//end of emitter conversation Acknolege
+  client.on('sendLocalConversation', function (token, mobileNum, conversationList) {
+    console.log(rooms);
+    var conversationIds = [];
+    var allMessagesIds = [];
+    console.log(client);
+    console.log("In local send conversation");
+    var allLocaList = JSON.parse(conversationList);
+    console.log("local conversation" + allLocaList.length);
+
+    ///&************************************
+    for (var i = 0; i < allLocaList.length; i++) {
+      var conversItem = allLocaList[i];
+      var convSaveDb = new Conversation;
+      convSaveDb.user1Mobile = mobileNum;
+      convSaveDb.user2Mobile = conversItem.mobileNumberOfOtherPerson;
+      convSaveDb.conversationSyncByUser1 = true;
+      if (conversItem.conversationServerId != null && conversItem.conversationServerId.length > 0) {
+        convSaveDb._id = conversItem.conversationServerId;
+      } else {
+        convSaveDb.save();
       }
-      else {
-        Conversation.findOne({ _id: data._conversationId})
-        .exec(function (err, conversationObject) {
-          ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
-          }).limit(5);
-          var obj = new Object();
-          obj.conversation = conversationObject;
-          obj.messages = conversationMessages;
-          client.emit('onNewConversationReceived', obj);
-        });
+      var objectOfConversation = new Object();
+      objectOfConversation.conversationClientId = conversItem.conversationClientId;
+      objectOfConversation.conversationServerId = convSaveDb._id.toString();
+      //  console.log(convSaveDb._id);
+      conversationIds.push(objectOfConversation);
+      var allLocalMessages = conversItem.unSyncedMessages;
+      for (var j = 0; j < allLocalMessages.length; j++) {
+        var localConversationFromMobile = allLocalMessages[j];
+        var localConversationObj = new ConversationMessages;
+        localConversationObj.messageType = localConversationFromMobile.messageType;
+        localConversationObj.messageText = localConversationFromMobile.messageText;
+        localConversationObj.messageRequestedEtherValue = localConversationFromMobile.messageRequestedEtherValue;;
+        localConversationObj._messageFromMobile = localConversationFromMobile.msgFromMobileNumber;
+        localConversationObj._messageToMobile = conversItem.mobileNumberOfOtherPerson;
+        localConversationObj._conversationId = convSaveDb._id;
+        //var dateMessage = new Date(parseInt(localConversationFromMobile.createdOnUTC, 10));
+        localConversationObj.createdOnUTC = localConversationFromMobile.createdOnUTC;
+        localConversationObj.save();
+        var objectForMessage = new Object();
+        objectForMessage.messageClientId = localConversationFromMobile._id;;
+        objectForMessage.messageServerId = localConversationObj._id.toString();
+        console.log("object for message" + objectForMessage);
+        allMessagesIds.push(objectForMessage);
+      }//end of for loop of j
+      if (allMessagesIds.length > 0) {
+        io.sockets["in"](client.room).emit('newMessagesArrived', client.username, true);
+        console.log("Before fliping status for " + convSaveDb.user2Mobile);
+        setUserSpecificConversationStatusFalse(convSaveDb.user2Mobile, convSaveDb._id);
+        //sendMessageToOtherUser(convSaveDb.user2Mobile);
       }
-    });
-    io.sockets["in"](client.room).emit('updatechat', client.username, data);
-  });
-  client.on('sendConversation', function (token, pageNumber) {
-    console.log("User token is " + token);
-    console.log("Page Number is " + pageNumber);
-    EthereumUser.findOne({ 'ethereumUserApplicationToken': token }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
-      if (ethereumUser != null) {
-        Conversation.find({ $or: [{ user1Mobile: ethereumUser.userContactNumber }, { user2Mobile: ethereumUser.userContactNumber }] }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationList) {
-          var objectArray = [];
-          var counter = 0;
-          if (conversationList.length > 0) {
-            for (var i = 0; i < conversationList.length; i++) {
-              var conversation = conversationList[i];
-              ConversationMessages.find({ _conversationId: conversation._id }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
-                var obj = new Object();
-                obj.conversation = conversation;
-				// a for testing purpose start
-                var messagesToSend = [];
-                var message = new ConversationMessages();
-                message.messageText = "Hello, hi";
-                message._messageFromUserId = conversation._messageFromUserId;
-                message._messageToUserId = conversation._messageToUserId;
-                message.createdOnUTC = new Date();
-                var message1 = new ConversationMessages();
-                message1.messageText = "fine fine";
-                message1._messageFromUserId = conversation._messageFromUserId;
-                message1._messageToUserId = conversation._messageToUserId;
-                message1.createdOnUTC = new Date();
-                messagesToSend.push(message);
-                messagesToSend.push(message1);
-                obj.messages = messagesToSend;
-                // for testing purpose end
-                //obj.messages = conversationMessages;
-                if (obj.messages.length > 0) {
-                  objectArray.push(obj);
-                }
-                if (counter == conversationList.length - 1) {
-                  client.emit('onConversationResponse', objectArray);
-                }
-                counter++;
-              }).limit(5);
-            }
-          }
-          else
-          {
-			  var array = [];
-            client.emit('onConversationResponse', array);
-          }
-        }).limit(20).skip(pageNumber * 20);
-      }
-    });
-  });
+    }//end of loop of iF
+
+    client.emit('onRecieveSynchIDs', conversationIds, allMessagesIds);
+  });//local conversation listner end
+  //when user recieve other messages and send acknolege that message deliver successfully
+  client.on('onAcknowledgeMessage', function (token, senderMobileNum, messageServerId) {
+    //first find all messages which are not delivered
+    ConversationMessages.find({ $and: [{ _messageFromMobile: senderMobileNum }, { userMessageFromDeliverStatus: false }] }, null, { sort: { 'updatedOnUTC': -1 } })
+      .exec(function (err, messageList) {
+        var allMessagesServerIds = [];
+        var orignalSenderOfMessages = "";
+        if (messageList != null) {
+          messageList.forEach(function (message) {
+            message.userMessageFromDeliverStatus = true;
+            orignalSenderOfMessages = message._messageFromMobile;
+            allMessagesServerIds.push(message._id);
+            message.save();
+          });//end of foreach
+
+        }
+        console.log("all message server ids" + allMessagesServerIds);
+        io.sockets["in"](client.room).emit('onAndroidClientMsgAcknowledge', allMessagesServerIds);
+        var clientIdForOtherUser = userHashMaps.get(orignalSenderOfMessages);
+        if (clientIdForOtherUser != null && clientIdForOtherUser.length > 0) {
+          io.sockets["in"](client.room).emit('onAndroidClientMsgAcknowledge', allMessagesServerIds);
+        }
+      });
+  });//end of on function of client
   client.on('sendImage', function (data) {//IOS will send Room Name
     console.log(data.Image);
     console.log(__dirname);
@@ -303,77 +353,120 @@ io.sockets.on('connection', function (client) {
     });
     io.sockets["in"](client.room).emit('updatechat', client.username, data);
   });
-  client.on('switchRoom', function (data) {
-    var oldroom;
-    oldroom = client.room;
-    client.leave(client.room);
-    client.join(data._conversationId);
-    client.emit('onRoomSet', data._conversationId);
+  client.on('pong', function () {
+    console.log("Pong received from client");
   });
   client.on('disconnect', function () {
-    delete usernames[client.username];
-    io.sockets.emit('updateusers', usernames);
-    client.broadcast.emit('updatechat', 'SERVER', client.username + ' has disconnected');
-    client.leave(client.room);
+    userHashMaps.remove(client.userMobile);
+    console.log("User Disconnect " + userHashMaps.count());
   });
   client.on('messagesRequest', function (data) {
     ConversationMessages.find({ _conversationId: data.conversationId }, null, { sort: { 'updatedOnUTC': -1 } }, function (err, conversationMessages) {
       client.emit('onMessagesReceived', conversationMessages);
     }).skip(data.pageNumber * 30).limit(30);
   });
-  client.on('event', function (data) { });
+  function sendMessageToOtherUser(mobileReciverNum) {
+    console.log(mobileReciverNum + " in other send message");
+    var otherUserKey = userHashMaps.get(mobileReciverNum);
+    if (otherUserKey != null && otherUserKey.length > 0) {
+      //here send specificaly user that fetch your messages
+      io.sockets["in"](client.room).emit('newMessagesArrived');
+    }
+    else {
+      //TODO send GCM message to other user
+    }
+  }//end of function
+
 });
 
 
+function getOtherUserMobile(userMobile, user1Mobile, user2Mobile) {
+  console.log(user1Mobile + ":" + user2Mobile);
+  if (userMobile.trim() === user1Mobile.trim()) {
+    return user2Mobile;
+  }
+  else {
+    return user1Mobile;
+  }
 
+}//end of getOtherUserMobile
 
-/*socket.on('adduser', function (data) {// IOS will send { id: 1, name: 'ali', _roomId = '', roomName='' }
-  var conversation = new Conversation();
-  var date = new Date();
-  Conversation.findOne({ user1Id: data.id, user2Id: '586e3b264a030317e09feeb9' })
-    .exec(function (err, conversationObject) {
-      if (err) {
-        res.json(err);
+function isConversationExist(userNum1, userNum2) {
+
+}//end of function
+//here we will implement the structure to send conversation obj 
+function getConversationObjForUserToSend(userMobile, conversationFromDB) {
+  var object = new Object();
+  object.updatedOnUTC = conversationFromDB.updatedOnUTC;
+  object.conversationId = conversationFromDB._id.toString();
+  object.user2Mobile = getOtherUserMobile(userMobile, conversationFromDB.user1Mobile, conversationFromDB.user2Mobile);
+  console.log(object);
+  return object;
+}//end of getConversation Obj
+
+//here we will create object of message to send user
+function getMessageObjForUserToSend(messageArrFromDb) {
+  var allMessagesForUser = [];
+
+  for (var i = 0; i < messageArrFromDb.length; i++) {//here to itereate on loop db result
+    var object = new Object();
+    messageObjFromDb = messageArrFromDb[i];
+    object.msgFromMobileNumber = messageObjFromDb._messageFromMobile;
+    object.messageId = messageObjFromDb._id.toString();
+    object.createdOnUTC = messageObjFromDb.createdOnUTC;
+    object.updatedOnUTC = messageObjFromDb.updatedOnUTC;
+    object.messageText = messageObjFromDb.messageText;
+    object.messageType = messageObjFromDb.messageType;
+    object.messageRequestedEtherValue = messageObjFromDb.messageRequestedEtherValue;
+    object.userMessageFromDeliverStatus = messageObjFromDb.userMessageFromDeliverStatus;
+    allMessagesForUser.push(object);
+  }//end of for loop
+  return allMessagesForUser;
+}//end of function for getting object for user
+
+function setUserConversationStatus(userMobile, statusForConversation) {
+  Conversation.find({ $or: [{ user1Mobile: userMobile }, { user2Mobile: userMobile }] }, null, { sort: { 'updatedOnUTC': -1 } })
+    .exec(function (err, conversationList) {
+      if (conversationList != null) {
+        for (var i = 0; i < conversationList.length; i++) {
+          conversation = conversationList[i];
+          if (userMobile.toString().trim() === conversation.user1Mobile) {
+            conversation.conversationSyncByUser1 = statusForConversation;
+          }//end of if for requesting persion is user1Mobile
+          else {
+            conversation.conversationSyncByUser2 = statusForConversation;
+          }//end of else
+          //console.log(conversation);
+          conversation.save();
+        }//end of loop 
       }
-      else {
-        if (conversationObject == null) {
-          conversation._user1Id = data.id;
-          conversation._user2Id = "586e3b264a030317e09feeb9"
-          conversation.username1 = data.name;
-          conversation.username2 = "April App";
-          conversation._roomId = data._roomId;
-          conversation.createdOnUTC = date;
-          conversation.updatedOnUTC = date;
-          conversation.isDeleted = false;
-          conversation.save(function (err) {
-            if (err) {
 
-            }
-            else {
-              socket.username = data.name;
-              socket.room = data.roomName;
-              usernames[data.name] = data.name;
-              socket.join(data.roomName);
-              socket.emit('updatechat', 'SERVER', 'you have connected to ' + data.roomName);
-              socket.broadcast.to('Lobby').emit('updatechat', 'SERVER', data.name + ' has connected to this room');
-              socket.emit('updaterooms', rooms, data.roomName);
-              socket.emit('conversationId', conversation._id);
-              BotWelcomeMessage(data, date);
-            }
-          });
-        }
-        else {
-          socket.username = data.name;
-          socket.room = data.roomName;
-          usernames[data.name] = data.name;
-          socket.join(data.roomName);
-          socket.emit('updatechat', 'SERVER', 'you have connected to ' + data.roomName);
-          socket.broadcast.to('Lobby').emit('updatechat', 'SERVER', data.name + ' has connected to this room');
-          socket.emit('updaterooms', rooms, data.roomName);
-          socket.emit('conversationId', conversationObject._id);
-        }
-      }
     });
-});*/
+}//end of setUsersConversation status
+function setUserSpecificConversationStatusFalse(userMobile, conversationId) {
+  Conversation.find({ _id: conversationId })
+    .exec(function (err, conversationList) {
+      if (conversationList != null) {
+        for (var i = 0; i < conversationList.length; i++) {
+          conversation = conversationList[i];
+          if (userMobile.toString().trim() === conversation.user1Mobile) {
+            conversation.conversationSyncByUser1 = false;
+          }//end of if for requesting persion is user1Mobile
+          else {
+            conversation.conversationSyncByUser2 = false;
+          }//end of else
+          //console.log(conversation);
+          conversation.save();
+        }//end of loop 
+      }
 
+
+    });
+}//end of function for setting conversation status false
+function sendHeartbeat() {
+  io.sockets.emit('ping', Math.floor(new Date()));
+  setTimeout(sendHeartbeat, 2000);
+}
+
+setTimeout(sendHeartbeat, 2000);
 module.exports = app;

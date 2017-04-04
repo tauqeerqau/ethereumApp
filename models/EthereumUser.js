@@ -6,7 +6,7 @@
 var mongoose = require('mongoose');
 
 // Define our beer schema
-var UserSchema   = new mongoose.Schema({
+var UserSchema = new mongoose.Schema({
     userName: String,
     userEmail: String,
     userFullName: String,
@@ -19,14 +19,17 @@ var UserSchema   = new mongoose.Schema({
     userAddress: String,
     userProfilePictureURL: String,
     ethereumUserApplicationToken: String,
-    ethereumUserPasscode:String,
+    ethereumUserPasscode: String,
     ethereumUserPasscodeStatus: Number,
     ethereumUserLoginDetail: Object,
     ethereumUserDoubleAuthenticationMode: Number,
     ethereumUserNotificationStatus: Number,
-    userGCM: String
+    userGCM: String,
+    idEmailVerified: { type: Boolean, default: false },
+    createdOnUTC: String,
+    updatedOnUTC: String,
+    userGUID: String
 });
 
 // Export the Mongoose model
 module.exports = mongoose.model('EthereumUser', UserSchema);
-

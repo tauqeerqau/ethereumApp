@@ -9,6 +9,8 @@ var sinchAuth = require('sinch-auth');
 var sinchSms = require('sinch-messaging');
 var Client = require('node-rest-client').Client;
 var dateTime = require('node-datetime');
+'use strict';
+const nodemailer = require('nodemailer');
 
 var EthereumUser = require('./../models/EthereumUser');
 var EthereumUserMobileCode = require('./../models/EthereumUserMobileCode');
@@ -18,6 +20,19 @@ var TransactionChart = require('./../models/TransactionChart');
 var GasUsedChart = require('./../models/GasUsedChart');
 var AverageGasLimitChart = require('./../models/AverageGasLimitChart');
 var DashboardData = require('./../models/DashboardData');
+var EthereumUserTransactions = require('./../models/EthereumUserTransactions');
+
+// create reusable transporter object using the default SMTP transport
+//let transporter = nodemailer.createTransport({
+var transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'testingideofuzion@gmail.com',
+        pass: 'quality123'
+    }
+});
+
+var randomstring = require("randomstring");
 
 var multipartMiddleware = multipart();
 
@@ -47,6 +62,8 @@ var getTotalDailyGasUsedDataRoute = router.route('/getTotalDailyGasUsedData');
 var getAverageGasLimitChartDataRoute = router.route('/getAverageGasLimitChartData');
 var getSaveNetworkStatsInDatabaseRoute = router.route('/getSaveNetworkStatsInDatabase');
 var postGetUserByContactNumberRoute = router.route('/getUserByContactNumber');
+var postEthereumUserVerifyEmailRoute = router.route('/ethereumUserVerifyEmail');
+var postForgotPasswordRoute = router.route('/forgotPassword');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -54,34 +71,25 @@ var Response = require('./../utilities/response');
 var ServerMessage = require('./../utilities/ServerMessages');
 var PasscodeStatus = require('./../utilities/PasscodeStatuses');
 
-var utility = new Utility(
-    {
-    });
+var utility = new Utility({});
 
-var password = new Password(
-    {
-    });
+var password = new Password({});
 
-var response = new Response(
-    {
+var response = new Response({
 
-    });
+});
 
-var serverMessage = new ServerMessage(
-    {
+var serverMessage = new ServerMessage({
 
-    });
+});
 
-var passcodeStatus = new PasscodeStatus(
-    {
+var passcodeStatus = new PasscodeStatus({
 
-    }
-);
+});
 
-var ethereumUserContactSyncing = new EthereumUserContactSyncing(
-    {
+var ethereumUserContactSyncing = new EthereumUserContactSyncing({
 
-    });
+});
 
 // Connection URL. This is where your mongodb server is running.
 
@@ -90,8 +98,7 @@ var url = utility.getURL();
 mongoose.connect(url, function (err, db) {
     if (err) {
         console.log(err);
-    }
-    else {
+    } else {
         console.log("Successfully Connected");
     }
 });
@@ -109,8 +116,7 @@ postEthereumUserRoute.post(function (req, res) {
             response.code = serverMessage.returnUserAlreadyExists();
             response.data = ethereumUser;
             res.json(response);
-        }
-        else {
+        } else {
             ethereumUser = new EthereumUser();
             ethereumUser.userName = req.body.userName;
             ethereumUser.userEmail = req.body.userEmail;
@@ -123,11 +129,31 @@ postEthereumUserRoute.post(function (req, res) {
             ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
             ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
             ethereumUser.userGCM = req.body.userGCM;
+            ethereumUser.createdOnUTC = Math.floor(new Date() / 1000);
+            ethereumUser.updatedOnUTC = Math.floor(new Date() / 1000);
+            ethereumUser.userGUID = uuid.v4();
+            var fullUrl = req.protocol + '://' + req.get('host');
+            var invitationFunction = fullUrl + "?userGUID=" + ethereumUser.userGUID + "&email=" + ethereumUser.email;
+            //fullUrl = fullUrl + invitationFunction;
+            var text = 'Your Invitation Link is  : ' + invitationFunction;
+            let mailOptions = {
+                from: '"Ethereum Invitation" <testingideofuzion@gmail.com>', // sender address
+                to: ethereumUser.email, // list of receivers
+                subject: 'Invitation Link', // Subject line
+                text: text, // plain text body
+            };
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    response.code = StatusCodeEnum.FAILURE;
+                    response.message = StatusMessages.FAILURE;
+                    response.data = error;
+                    //res.json(response);
+                }
+            });
             ethereumUser.save(function (err) {
                 if (err) {
                     res.send(err);
-                }
-                else {
+                } else {
                     var ethereumUserMobileDevices = new EthereumUserMobileDevices();
                     ethereumUserMobileDevices.userName = ethereumUser.userName;
                     ethereumUserMobileDevices._userId = ethereumUser._id;
@@ -141,8 +167,7 @@ postEthereumUserRoute.post(function (req, res) {
                     ethereumUserMobileDevices.save(function (err) {
                         if (err) {
 
-                        }
-                        else {
+                        } else {
                             response.message = "User Added Successfully";
                             response.code = serverMessage.returnSuccess();;
                             response.data = ethereumUser;
@@ -162,8 +187,7 @@ getEthereumUserRoute.get(function (req, res) {
     EthereumUser.find({}, null, { sort: { '_id': -1 } }, function (err, ethereumUsers) {
         if (err) {
             res.send(err);
-        }
-        else {
+        } else {
             response.message = "Success";
             response.code = serverMessage.returnSuccess();
             response.data = ethereumUsers;
@@ -177,8 +201,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
         EthereumUser.findOne({ 'userEmail': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
             if (err) {
                 res.send(err);
-            }
-            else {
+            } else {
                 if (ethereumUser == null) {
                     response.message = "User does not Exist";
                     response.code = serverMessage.returnNotFound();
@@ -186,6 +209,13 @@ postEthereumUserLoginRoute.post(function (req, res) {
                     res.json(response);
                 }
                 if (ethereumUser != null) {
+                    if (ethereumUser.idEmailVerified == false) {
+                        response.message = "User Email Not Verified";
+                        response.code = serverMessage.returnEmailNotVerified();
+                        response.data = null;
+                        res.json(response);
+                        return;
+                    }
                     var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
                     if (validate == true) {
                         var ethereumUserMobileDevices = new EthereumUserMobileDevices();
@@ -201,13 +231,11 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         ethereumUserMobileDevices.save(function (err) {
                             if (err) {
 
-                            }
-                            else {
+                            } else {
                                 EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
                                     if (err) {
 
-                                    }
-                                    else {
+                                    } else {
                                         response.message = "User's Login  is Successfull";
                                         response.code = serverMessage.returnSuccess();
                                         var devicesNames = [];
@@ -224,8 +252,7 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                 }).limit(5);
                             }
                         });
-                    }
-                    else {
+                    } else {
                         response.message = "User Password is incorrect";
                         response.code = serverMessage.returnPasswordMissMatch();
                         response.data = null;
@@ -234,13 +261,11 @@ postEthereumUserLoginRoute.post(function (req, res) {
                 }
             }
         });
-    }
-    else {
+    } else {
         EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
             if (err) {
                 res.send(err);
-            }
-            else {
+            } else {
                 if (ethereumUser == null) {
                     response.message = "User does not Exist";
                     response.code = serverMessage.returnNotFound();
@@ -263,13 +288,11 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         ethereumUserMobileDevices.save(function (err) {
                             if (err) {
 
-                            }
-                            else {
+                            } else {
                                 EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
                                     if (err) {
 
-                                    }
-                                    else {
+                                    } else {
                                         response.message = "User's Login is Successfull";
                                         response.code = serverMessage.returnSuccess();
                                         var devicesNames = [];
@@ -280,14 +303,42 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                         ethereumUser.save(function (err) {
                                             ethereumUser.ethereumUserLoginDetail = devicesNames;
                                             response.data = ethereumUser;
+
+                                            EthereumUserTransactions.find({}, function (err, ethereumUserTransactions) {
+                                                if (err) {
+
+                                                }
+                                                else {
+                                                    var start = new Date();
+                                                    start.setHours(0, 0, 0, 0);
+                                                    start = start.toUTCString / 1000;
+                                                    var end = new Date();
+                                                    end.setHours(23, 59, 59, 999);
+                                                    end = end.toUTCString / 1000;
+                                                    var transactionsByDays = [];
+                                                    for (var iDayCounter = 0; iDayCounter < 7; iDayCounter++) {
+                                                        var dailyTransactions = [];
+                                                        for (var iEthereumUserTransactionsCounter = 0; iEthereumUserTransactionsCounter < ethereumUserTransactions.length; iEthereumUserTransactionsCounter++) {
+                                                            if (ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC > start && ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC <= end) {
+                                                                dailyTransactions.push(ethereumUserTransactions[iEthereumUserTransactionsCounter]);
+                                                            }
+                                                        }
+                                                        var dailyTransactionWithDayObject = new Object();
+                                                        dailyTransactionWithDayObject.Day = iDayCounter;
+                                                        dailyTransactionWithDayObject.Transactions = dailyTransactions;
+                                                        transactionsByDays.push(dailyTransactionWithDayObject);
+                                                        start = start + 86400;
+                                                        end = end + 86400;
+                                                    }
+                                                }
+                                            });
                                             res.json(response);
                                         });
                                     }
                                 }).limit(5);
                             }
                         });
-                    }
-                    else {
+                    } else {
                         response.message = "User Password is incorrect";
                         response.code = serverMessage.returnPasswordMissMatch();
                         response.data = null;
@@ -304,8 +355,7 @@ postEthereumUserMobileRoute.post(function (req, res) {
     EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
         if (err) {
             res.send(err);
-        }
-        else {
+        } else {
             if (ethereumUser == null) {
                 response.message = "User does not Exist";
                 response.code = serverMessage.returnNotFound();
@@ -319,24 +369,21 @@ postEthereumUserMobileRoute.post(function (req, res) {
                         response.code = serverMessage.returnNotFound();
                         response.data = null;
                         res.json(response);
-                    }
-                    else {
+                    } else {
                         if (ethereumUserMobileCode.userMobileCode == req.body.userMobileCode) {
                             ethereumUser.userContactNumber = ethereumUserMobileCode.userContactNumber;
                             ethereumUser.userProfileStatus = 2;
                             ethereumUser.save(function (err, ethereumUser) {
                                 if (err) {
 
-                                }
-                                else {
+                                } else {
                                     response.message = "User Mobile Number is Updated";
                                     response.code = serverMessage.returnSuccess();;
                                     response.data = ethereumUser;
                                     res.json(response);
                                 }
                             });
-                        }
-                        else {
+                        } else {
                             response.message = "Code Entered is Invalid";
                             response.code = serverMessage.returnPasswordMissMatch();;
                             response.data = ethereumUser;
@@ -354,8 +401,7 @@ postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, re
     EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
         if (err) {
             res.send(err);
-        }
-        else {
+        } else {
             if (ethereumUser == null) {
                 response.message = "User does not Exist";
                 response.code = serverMessage.returnNotFound;
@@ -371,8 +417,7 @@ postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, re
                     var extension = "";
                     if (req.files.file.headers['content-type'] == 'image/jpeg') {
                         extension = ".jpg";
-                    }
-                    else if (req.files.file.headers['content-type'] == 'image/png') {
+                    } else if (req.files.file.headers['content-type'] == 'image/png') {
                         extension = ".png";
                     }
                     var imageName = uuid.v4() + extension;
@@ -388,8 +433,7 @@ postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, re
                                 ethereumUser.save(function (err) {
                                     if (err) {
                                         res.send(err);
-                                    }
-                                    else {
+                                    } else {
                                         response.message = "User Profile Added Successfully";
                                         response.code = serverMessage.returnSuccess();;
                                         response.data = ethereumUser;
@@ -399,13 +443,11 @@ postEthereumUserCompleteProfileRoute.post(multipartMiddleware, function (req, re
                             }
                         });
                     });
-                }
-                else {
+                } else {
                     ethereumUser.save(function (err) {
                         if (err) {
                             res.send(err);
-                        }
-                        else {
+                        } else {
                             response.message = "User Profile Added Successfully";
                             response.code = serverMessage.returnSuccess();;
                             response.data = ethereumUser;
@@ -432,8 +474,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
             response.code = serverMessage.returnUserAlreadyExists();
             response.data = err;
             res.json(response);
-        }
-        else {
+        } else {
             EthereumUserMobileCode.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUserMobileCode) {
                 if (ethereumUserMobileCode == null) {
                     ethereumUserMobileCode = new EthereumUserMobileCode();
@@ -446,8 +487,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             response.code = serverMessage.returnFailure();;
                             response.data = err;
                             res.json(response);
-                        }
-                        else {
+                        } else {
                             var sinchSms = require('sinch-sms')({
                                 key: '44366d3f-d7b9-42f2-8f41-de72956b2ab4',
                                 secret: 'jOLGxUbOcU6oEu4TAx09Eg=='
@@ -455,7 +495,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
                                 response.message = "User Mobile Code is Saved";
-                                response.code = serverMessage.returnSuccess();
+                                response.code = serverMessage.returnMessageSuccess();
                                 response.data = etherUserMobileCode;
                                 var status = sinchSms.getStatus(resp.messageId);
                                 res.json(response);
@@ -469,8 +509,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             });
                         }
                     });
-                }
-                else {
+                } else {
                     ethereumUserMobileCode.userName = req.body.userName;
                     ethereumUserMobileCode.userContactNumber = '+' + req.body.userContactNumber;
                     ethereumUserMobileCode.userMobileCode = Math.floor(Math.random() * 9000) + 1000;
@@ -480,8 +519,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             response.code = serverMessage.returnFailure();;
                             response.data = err;
                             res.json(response);
-                        }
-                        else {
+                        } else {
                             var sinchSms = require('sinch-sms')({
                                 key: '44366d3f-d7b9-42f2-8f41-de72956b2ab4',
                                 secret: 'jOLGxUbOcU6oEu4TAx09Eg=='
@@ -489,7 +527,7 @@ postEthereumUserMobileCodeRoute.post(function (req, res) {
                             sinchSms.send(etherUserMobileCode.userContactNumber, 'Hi, Your Mobile Code is ' + etherUserMobileCode.userMobileCode).then(function (resp) {
                                 //All good, response contains messageId
                                 response.message = "User Mobile Code is Sent";
-                                response.code = serverMessage.returnSuccess();
+                                response.code = serverMessage.returnMessageSuccess();
                                 response.data = etherUserMobileCode;
                                 var status = sinchSms.getStatus(resp.messageId);
                                 res.json(response);
@@ -516,8 +554,7 @@ postEthereumUserSyncContactsRoute.post(function (req, res) {
     EthereumUser.find({}, 'userContactNumber', { sort: { '_id': -1 } }, function (err, ethereumUsersContactNumber) {
         if (err) {
 
-        }
-        else {
+        } else {
             for (var iNumberCount = 0; iNumberCount < arrayOfNumbers.length; iNumberCount++) {
                 ethereumUserContactSyncing = new EthereumUserContactSyncing();
                 ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount];
@@ -542,8 +579,7 @@ postEthereumUserMobileNumberSyncRoute.post(function (req, res) {
     EthereumUser.find({}, 'userContactNumber', { sort: { '_id': -1 } }, function (err, ethereumUsersContactNumber) {
         if (err) {
 
-        }
-        else {
+        } else {
             for (var iNumberCount = 0; iNumberCount < arrayOfNumbers.length; iNumberCount++) {
                 ethereumUserContactSyncing = new EthereumUserContactSyncing();
                 ethereumUserContactSyncing.userContactNumber = arrayOfNumbers[iNumberCount].m;
@@ -567,16 +603,14 @@ postEthereumUserChangePasswordRoute.post(function (req, res) {
             response.code = serverMessage.returnUserAlreadyExists();
             response.data = ethereumUser;
             res.json(response);
-        }
-        else {
+        } else {
             var validate = password.validateHash(ethereumUser.userPassword, req.body.userOldPassword);
             if (validate == true) {
                 ethereumUser.userPassword = password.createHash(req.body.userNewPassword);
                 ethereumUser.save(function (err) {
                     if (err) {
                         res.send(err);
-                    }
-                    else {
+                    } else {
                         response.message = "User Password Updated Successfully";
                         response.code = serverMessage.returnSuccess();;
                         response.data = ethereumUser;
@@ -584,8 +618,7 @@ postEthereumUserChangePasswordRoute.post(function (req, res) {
                     }
                 });
 
-            }
-            else {
+            } else {
                 response.message = "User Old Password is incorrect";
                 response.code = serverMessage.returnPasswordMissMatch();
                 response.data = null;
@@ -602,15 +635,13 @@ postEthereumUserAddPasscodeRoute.post(function (req, res) {
             response.code = serverMessage.returnUserAlreadyExists();
             response.data = ethereumUser;
             res.json(response);
-        }
-        else {
+        } else {
             ethereumUser.ethereumUserPasscode = req.body.passcode;
             ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
             ethereumUser.save(function (err) {
                 if (err) {
                     res.send(err);
-                }
-                else {
+                } else {
                     response.message = "User Passcode Added Successfully";
                     response.code = serverMessage.returnSuccess();;
                     response.data = ethereumUser;
@@ -628,15 +659,13 @@ postEthereumUserChangePasscodeRoute.post(function (req, res) {
             response.code = serverMessage.returnUserAlreadyExists();
             response.data = ethereumUser;
             res.json(response);
-        }
-        else {
+        } else {
             if (ethereumUser.ethereumUserPasscode == req.body.oldPasscode) {
                 ethereumUser.ethereumUserPasscode = req.body.newPasscode;
                 ethereumUser.save(function (err) {
                     if (err) {
                         res.send(err);
-                    }
-                    else {
+                    } else {
                         response.message = "User Passcode Updated Successfully";
                         response.code = serverMessage.returnSuccess();;
                         response.data = ethereumUser;
@@ -644,8 +673,7 @@ postEthereumUserChangePasscodeRoute.post(function (req, res) {
                     }
                 });
 
-            }
-            else {
+            } else {
                 response.message = "User Old Passcode is incorrect";
                 response.code = serverMessage.returnPasswordMissMatch();
                 response.data = null;
@@ -659,8 +687,7 @@ postEthereumUsersLoginListWithDevicesRoute.post(function (req, res) {
     EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
         if (err) {
 
-        }
-        else {
+        } else {
             response.message = "User's Login Details";
             response.code = serverMessage.returnSuccess();
             response.data = ethereumUserMobileDevices;
@@ -676,22 +703,18 @@ postEthereumUsersChangePasscodeStatusRoute.post(function (req, res) {
             response.code = serverMessage.returnFailure();
             response.data = null;
             res.json(response);
-        }
-        else {
+        } else {
             if (ethereumUser == null) {
                 response.message = "User does not Exist";
                 response.code = serverMessage.returnNotFound();
                 response.data = null;
                 res.json(response);
-            }
-            else {
+            } else {
                 if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnNotSet()) {
                     ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
-                }
-                else if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnPasscodeOff()) {
+                } else if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnPasscodeOff()) {
                     ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOn();
-                }
-                else if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnPasscodeOn()) {
+                } else if (ethereumUser.ethereumUserPasscodeStatus == passcodeStatus.returnPasscodeOn()) {
                     ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnPasscodeOff();
                 }
                 ethereumUser.save(function (err) {
@@ -720,20 +743,17 @@ postEthereumUsersChangeDoubleAuthenticationRoute.post(function (req, res) {
             response.code = serverMessage.returnFailure();
             response.data = null;
             res.json(response);
-        }
-        else {
+        } else {
             if (ethereumUser == null) {
                 response.message = "User does not Exist";
                 response.code = serverMessage.returnNotFound();
                 response.data = null;
                 res.json(response);
-            }
-            else {
+            } else {
 
                 if (ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOff()) {
                     ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOn();
-                }
-                else if (ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOn()) {
+                } else if (ethereumUser.ethereumUserDoubleAuthenticationMode == passcodeStatus.returnPasscodeOn()) {
                     ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
                 }
                 ethereumUser.save(function (err) {
@@ -754,20 +774,17 @@ postEthereumUsersChangeNotificationStatusRoute.post(function (req, res) {
             response.code = serverMessage.returnFailure();
             response.data = null;
             res.json(response);
-        }
-        else {
+        } else {
             if (ethereumUser == null) {
                 response.message = "User does not Exist";
                 response.code = serverMessage.returnNotFound();
                 response.data = null;
                 res.json(response);
-            }
-            else {
+            } else {
 
                 if (ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOff()) {
                     ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
-                }
-                else if (ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOn()) {
+                } else if (ethereumUser.ethereumUserNotificationStatus == passcodeStatus.returnPasscodeOn()) {
                     ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOff();
                 }
                 ethereumUser.save(function (err) {
@@ -811,8 +828,7 @@ postConvertFromSourceToTargetCurrenciesRoute.post(function (req, res) {
             console.log(obj1.value);
             if (i < 20) {
                 urlStringForFirst20 = urlStringForFirst20 + obj1.value + ",";
-            }
-            else {
+            } else {
                 urlStringForNext20 = urlStringForNext20 + obj1.value + ",";
                 currencyGreaterThan20 = true;
             }
@@ -829,8 +845,7 @@ postConvertFromSourceToTargetCurrenciesRoute.post(function (req, res) {
                     response.data = object3;
                     res.json(response);
                 });
-            }
-            else {
+            } else {
                 response.message = "Currency is converted";
                 response.code = serverMessage.returnSuccess();
                 response.data = responseArray;
@@ -847,8 +862,7 @@ getAllCurrenciesRoute.get(function (req, res) {
     jsonfile.readFile(file, function (err, data) {
         if (err) {
             console.log(err);
-        }
-        else {
+        } else {
             response.message = "Currency's list";
             response.code = serverMessage.returnSuccess();
             response.data = data;
@@ -869,32 +883,31 @@ function extend(target) {
 
 getDasboardDataRoute.get(function (req, res) {
     DashboardData.findOne({}, null, { sort: { '_id': -1 } }, function (err, dashboardDataObject) {
-    var obj = new Object();
-    obj.averageBlockTime = dashboardDataObject.averageBlockTime;
-    obj.hashRate = dashboardDataObject.hashRate;
-    obj.lastBlock = dashboardDataObject.lastBlock;
-    obj.currentRate = dashboardDataObject.currentRate;
-    obj.difficulty = dashboardDataObject.difficulty;
-    obj.uncleRate = dashboardDataObject.uncleRate;
-    obj.gasLimit = dashboardDataObject.gasLimit;
-    obj.gasPrice = dashboardDataObject.gasPrice;
-    obj.activeNodeCount = dashboardDataObject.activeNodeCount;
-    obj.marketCapacity = dashboardDataObject.marketCapacity;
-    obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
-	obj.totalSupply = dashboardDataObject.totalSupply;
-    AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
-        obj.blockTimeChartData = averageGasLimitChartData;
-        GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
-            obj.gasUsedChartData = gasUsedChartData;
-            TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
-                obj.transactionChartData = transactionChartData;
-                res.json(obj);
-            }).limit(10);
-        }).limit(10);
-    }).limit(10);
+        var obj = new Object();
+        obj.averageBlockTime = dashboardDataObject.averageBlockTime;
+        obj.hashRate = dashboardDataObject.hashRate;
+        obj.lastBlock = dashboardDataObject.lastBlock;
+        obj.currentRate = dashboardDataObject.currentRate;
+        obj.difficulty = dashboardDataObject.difficulty;
+        obj.uncleRate = dashboardDataObject.uncleRate;
+        obj.gasLimit = dashboardDataObject.gasLimit;
+        obj.gasPrice = dashboardDataObject.gasPrice;
+        obj.activeNodeCount = dashboardDataObject.activeNodeCount;
+        obj.marketCapacity = dashboardDataObject.marketCapacity;
+        obj.totalTransactionCount = dashboardDataObject.totalTransactionCount;
+        AverageGasLimitChart.find({}, null, { sort: { '_id': -1 } }, function (err, averageGasLimitChartData) {
+            obj.blockTimeChartData = averageGasLimitChartData;
+            GasUsedChart.find({}, null, { sort: { '_id': -1 } }, function (err, gasUsedChartData) {
+                obj.gasUsedChartData = gasUsedChartData;
+                TransactionChart.find({}, null, { sort: { '_id': -1 } }, function (err, transactionChartData) {
+                    obj.transactionChartData = transactionChartData;
+                    res.json(obj);
+                });
+            });
+        });
     });
 });
-//test
+
 getChartForDailyTransactionsDataRoute.get(function (req, res) {
     var http = require('http');
     var fs = require('fs');
@@ -1097,8 +1110,7 @@ getSaveNetworkStatsInDatabaseRoute.get(function (req, res) {
                             dashboardData.save(function (err, dashboardDataObject) {
                                 if (err) {
                                     res.json(err);
-                                }
-                                else {
+                                } else {
                                     res.json(dashboardDataObject);
                                 }
                             });
@@ -1110,23 +1122,92 @@ getSaveNetworkStatsInDatabaseRoute.get(function (req, res) {
     });
 });
 
-postGetUserByContactNumberRoute.post(function(req,res){
+postGetUserByContactNumberRoute.post(function (req, res) {
     var contactNumber = req.body.contactNumber;
     contactNumber = "+" + contactNumber;
     EthereumUser.findOne({ 'userContactNumber': contactNumber }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
-        if(ethereumUser == null)
-        {
+        if (ethereumUser == null) {
+            response.message = "User does not exist";
+            response.code = serverMessage.returnNotFound();
+            response.data = null;
+            res.json(response);
+        } else {
+            response.message = "User Found";
+            response.code = serverMessage.returnSuccess();
+            response.data = ethereumUser;
+            res.json(response);
+        }
+    });
+});
+
+postEthereumUserVerifyEmailRoute.post(function (req, res) {
+    var guid = req.body.userGUID;
+    var emailVerifiedTime = Math.floor(new Date() / 1000);
+    EthereumUser.findOne({ 'userEmail': req.body.email }, function (err, ethereumUser) {
+        if (ethereumUser == null) {
             response.message = "User does not exist";
             response.code = serverMessage.returnNotFound();
             response.data = null;
             res.json(response);
         }
-        else
-        {
-            response.message = "User Found";
-            response.code = serverMessage.returnSuccess();
-            response.data = ethereumUser;
+        else if (ethereumUser.updatedOnUTC + 86400 < emailVerifiedTime) {
+            response.message = "Link is Expired";
+            response.code = serverMessage.returnLinkExpired();
+            response.data = null;
             res.json(response);
+        }
+        else if (guid != ethereumUser.userGUID) {
+            response.message = "GUIS is Miss Macthed";
+            response.code = serverMessage.returnLinkExpired();
+            response.data = null;
+            res.json(response);
+        }
+        else {
+            response.message = "Success";
+            response.code = serverMessage.returnSuccess();
+            response.data = null;
+            res.json(response);
+        }
+    });
+});
+
+postForgotPasswordRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userEmail': req.body.email }, function (err, ethereumUser) {
+        if (ethereumUser == null) {
+            response.message = "User does not exist";
+            response.code = serverMessage.returnNotFound();
+            response.data = null;
+            res.json(response);
+        }
+        else {
+            var randomStringPassword = randomstring.generate(8);
+            ethereumUser.userPassword = password.createHash(req.body.randomStringPassword);
+            var text = 'Your Password for Login is   : ' + randomStringPassword;
+            let mailOptions = {
+                from: '"Ethereum Invitation" <testingideofuzion@gmail.com>', // sender address
+                to: ethereumUser.email, // list of receivers
+                subject: 'Invitation Link', // Subject line
+                text: text, // plain text body
+            };
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    response.code = StatusCodeEnum.FAILURE;
+                    response.message = StatusMessages.FAILURE;
+                    response.data = error;
+                    //res.json(response);
+                }
+            });
+            ethereumUser.save(function (err) {
+                if (err) {
+                    res.send(err);
+                }
+                else {
+                    response.message = "Success";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = null;
+                    res.json(response);
+                }
+            });
         }
     });
 });
