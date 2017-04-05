@@ -110,7 +110,17 @@ router.get('/', function (req, res, next) {
 });
 
 postEthereumUserRoute.post(function (req, res) {
-    EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+    EthereumUser.findOne({ 'userEmail': req.body.userEmail }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if(ethereumUser!=null)
+        {
+            response.message = "Email already Exists";
+            response.code = serverMessage.returnEmailAlreadyExists();
+            response.data = ethereumUser;
+            res.json(response);
+        }
+        else
+        {
+            EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
         if (ethereumUser != null) {
             response.message = "User already Exists";
             response.code = serverMessage.returnUserAlreadyExists();
@@ -179,6 +189,8 @@ postEthereumUserRoute.post(function (req, res) {
 
         }
     });
+        }
+    });
 });
 
 
@@ -216,79 +228,80 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         res.json(response);
                         return;
                     }
-                    else if (ethereumUser.isEmailVerified == true)
-                    {
-                    var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
-                    if (validate == true) {
-                        var ethereumUserMobileDevices = new EthereumUserMobileDevices();
-                        ethereumUserMobileDevices.userName = ethereumUser.userName;
-                        ethereumUserMobileDevices._userId = ethereumUser._id;
-                        ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
-                        ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
-                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
-                        ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
-                        var dt = dateTime.create();
-                        var formatted = dt.format('Y-m-d H:M:S');
-                        ethereumUserMobileDevices.userLastLoginTime = formatted;
-                        ethereumUserMobileDevices.save(function (err) {
-                            if (err) {
+                    else if (ethereumUser.isEmailVerified == true) {
+                        var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
+                        if (validate == true) {
+                            var ethereumUserMobileDevices = new EthereumUserMobileDevices();
+                            ethereumUserMobileDevices.userName = ethereumUser.userName;
+                            ethereumUserMobileDevices._userId = ethereumUser._id;
+                            ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
+                            ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
+                            ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                            ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
+                            var dt = dateTime.create();
+                            var formatted = dt.format('Y-m-d H:M:S');
+                            ethereumUserMobileDevices.userLastLoginTime = formatted;
+                            ethereumUserMobileDevices.save(function (err) {
+                                if (err) {
 
-                            } else {
-                                EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
-                                    if (err) {
+                                } else {
+                                    EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
+                                        if (err) {
 
-                                    } else {
-                                        response.message = "User's Login  is Successfull";
-                                        response.code = serverMessage.returnSuccess();
-                                        var devicesNames = [];
-                                        ethereumUserMobileDevices.forEach(function (element) {
-                                            devicesNames.push(element.userDeviceName);
-                                        }, this);
-                                        ethereumUser.userGCM = req.body.userGCM;
-                                        ethereumUser.save(function (err) {
-                                            ethereumUser.ethereumUserLoginDetail = devicesNames;
-                                            EthereumUserTransactions.find({}, function (err, ethereumUserTransactions) {
-                                                if (err) {
+                                        } else {
+                                            response.message = "User's Login  is Successfull";
+                                            response.code = serverMessage.returnSuccess();
+                                            var devicesNames = [];
+                                            ethereumUserMobileDevices.forEach(function (element) {
+                                                devicesNames.push(element.userDeviceName);
+                                            }, this);
+                                            ethereumUser.userGCM = req.body.userGCM;
+                                            ethereumUser.save(function (err) {
+                                                ethereumUser.ethereumUserLoginDetail = devicesNames;
+                                                EthereumUserTransactions.find({}, function (err, ethereumUserTransactions) {
+                                                    if (err) {
 
-                                                }
-                                                else {
-                                                    var start = new Date();
-                                                    start.setHours(0, 0, 0, 0);
-                                                    start = start.toUTCString / 1000;
-                                                    var end = new Date();
-                                                    end.setHours(23, 59, 59, 999);
-                                                    end = end.toUTCString / 1000;
-                                                    var transactionsByDays = [];
-                                                    for (var iDayCounter = 0; iDayCounter < 7; iDayCounter++) {
-                                                        var dailyTransactions = [];
-                                                        for (var iEthereumUserTransactionsCounter = 0; iEthereumUserTransactionsCounter < ethereumUserTransactions.length; iEthereumUserTransactionsCounter++) {
-                                                            if (ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC > start && ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC <= end) {
-                                                                dailyTransactions.push(ethereumUserTransactions[iEthereumUserTransactionsCounter]);
-                                                            }
-                                                        }
-                                                        var dailyTransactionWithDayObject = new Object();
-                                                       dailyTransactionWithDayObject.Day = iDayCounter;
-                                                        dailyTransactionWithDayObject.Transactions = dailyTransactions;
-                                                        transactionsByDays.push(dailyTransactionWithDayObject);
-                                                        start = start + 86400;
-                                                        end = end + 86400;
                                                     }
-                                                    ethereumUser.transactionsByDays = transactionsByDays;
-                                                }
-                                                EthereumUserTransactions.find({$or:[{fromUser:ethereumUser._id},{toUser:ethereumUser._id}]},function(err,top2Transactions){
-                                                    ethereumUser.top2Transactions = top2Transactions;
-                                                    response.data = ethereumUser;
-                                                    res.json(response);
-                                                }).sort({createdOnUTC:-1}).limit(2);
+                                                    else {
+                                                        var start = new Date();
+                                                        start.setHours(0, 0, 0, 0);
+                                                        start = start.toUTCString / 1000;
+                                                        var end = new Date();
+                                                        end.setHours(23, 59, 59, 999);
+                                                        end = end.toUTCString / 1000;
+                                                        var transactionsByDays = [];
+                                                        for (var iDayCounter = 0; iDayCounter < 7; iDayCounter++) {
+                                                            var dailyTransactions = [];
+                                                            for (var iEthereumUserTransactionsCounter = 0; iEthereumUserTransactionsCounter < ethereumUserTransactions.length; iEthereumUserTransactionsCounter++) {
+                                                                if (ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC > start && ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC <= end) {
+                                                                    dailyTransactions.push(ethereumUserTransactions[iEthereumUserTransactionsCounter]);
+                                                                }
+                                                            }
+                                                            var dailyTransactionWithDayObject = new Object();
+                                                            dailyTransactionWithDayObject.Day = iDayCounter;
+                                                            dailyTransactionWithDayObject.TransactionsCount = dailyTransactions.length;
+                                                            if (dailyTransactions.length > 0) {
+                                                                transactionsByDays.push(dailyTransactionWithDayObject);
+                                                            }
+                                                            start = start + 86400;
+                                                            end = end + 86400;
+                                                        }
+                                                        ethereumUser.transactionsByDays = transactionsByDays;
+                                                    }
+                                                    EthereumUserTransactions.find({ $or: [{ fromUser: ethereumUser._id }, { toUser: ethereumUser._id }] }, function (err, top2Transactions) {
+                                                        ethereumUser.top2Transactions = top2Transactions;
+                                                        response.data = ethereumUser;
+                                                        res.json(response);
+                                                    }).sort({ createdOnUTC: -1 }).limit(2);
+                                                });
                                             });
-                                        });
-                                    }
-                                }).limit(5);
-                            }
-                        });
+                                        }
+                                    }).limit(5);
+                                }
+                            });
+                        }
                     }
-                 }
-                  else {
+                    else {
                         response.message = "User Password is incorrect";
                         response.code = serverMessage.returnPasswordMissMatch();
                         response.data = null;
@@ -316,84 +329,83 @@ postEthereumUserLoginRoute.post(function (req, res) {
                         res.json(response);
                         return;
                     }
-                    else if (ethereumUser.isEmailVerified == true)
-                    {
-                    var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
-                    if (validate == true) {
-                        var ethereumUserMobileDevices = new EthereumUserMobileDevices();
-                        ethereumUserMobileDevices.userName = ethereumUser.userName;
-                        ethereumUserMobileDevices._userId = ethereumUser._id;
-                        ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
-                        ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
-                        ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
-                        ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
-                        var dt = dateTime.create();
-                        var formatted = dt.format('Y-m-d H:M:S');
-                        ethereumUserMobileDevices.userLastLoginTime = formatted;
-                        ethereumUserMobileDevices.save(function (err) {
-                            if (err) {
+                    else if (ethereumUser.isEmailVerified == true) {
+                        var validate = password.validateHash(ethereumUser.userPassword, req.body.userPassword);
+                        if (validate == true) {
+                            var ethereumUserMobileDevices = new EthereumUserMobileDevices();
+                            ethereumUserMobileDevices.userName = ethereumUser.userName;
+                            ethereumUserMobileDevices._userId = ethereumUser._id;
+                            ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
+                            ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
+                            ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                            ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
+                            var dt = dateTime.create();
+                            var formatted = dt.format('Y-m-d H:M:S');
+                            ethereumUserMobileDevices.userLastLoginTime = formatted;
+                            ethereumUserMobileDevices.save(function (err) {
+                                if (err) {
 
-                            } else {
-                                EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
-                                    if (err) {
+                                } else {
+                                    EthereumUserMobileDevices.find({ 'userName': req.body.userName }, null, { sort: { userLastLoginTime: 'descending' } }, function (err, ethereumUserMobileDevices) {
+                                        if (err) {
 
-                                    } else {
-                                        response.message = "User's Login is Successfull";
-                                        response.code = serverMessage.returnSuccess();
-                                        var devicesNames = [];
-                                        ethereumUserMobileDevices.forEach(function (element) {
-                                            devicesNames.push(element.userDeviceName);
-                                        }, this);
-                                        ethereumUser.userGCM = req.body.userGCM;
-                                        ethereumUser.save(function (err) {
-                                            ethereumUser.ethereumUserLoginDetail = devicesNames;
-                                            EthereumUserTransactions.find({}, function (err, ethereumUserTransactions) {
-                                                if (err) {
+                                        } else {
+                                            response.message = "User's Login is Successfull";
+                                            response.code = serverMessage.returnSuccess();
+                                            var devicesNames = [];
+                                            ethereumUserMobileDevices.forEach(function (element) {
+                                                devicesNames.push(element.userDeviceName);
+                                            }, this);
+                                            ethereumUser.userGCM = req.body.userGCM;
+                                            ethereumUser.save(function (err) {
+                                                ethereumUser.ethereumUserLoginDetail = devicesNames;
+                                                EthereumUserTransactions.find({}, function (err, ethereumUserTransactions) {
+                                                    if (err) {
 
-                                                }
-                                                else {
-                                                    var start = new Date();
-                                                    start.setHours(0, 0, 0, 0);
-                                                    start = start.toUTCString / 1000;
-                                                    var end = new Date();
-                                                    end.setHours(23, 59, 59, 999);
-                                                    end = end.toUTCString / 1000;
-                                                    var transactionsByDays = [];
-                                                    for (var iDayCounter = 0; iDayCounter < 7; iDayCounter++) {
-                                                        var dailyTransactions = [];
-                                                        for (var iEthereumUserTransactionsCounter = 0; iEthereumUserTransactionsCounter < ethereumUserTransactions.length; iEthereumUserTransactionsCounter++) {
-                                                            if (ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC > start && ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC <= end) {
-                                                                dailyTransactions.push(ethereumUserTransactions[iEthereumUserTransactionsCounter]);
-                                                            }
-                                                        }
-                                                        var dailyTransactionWithDayObject = new Object();
-                                                       dailyTransactionWithDayObject.Day = iDayCounter;
-                                                        dailyTransactionWithDayObject.Transactions = dailyTransactions;
-                                                        transactionsByDays.push(dailyTransactionWithDayObject);
-                                                        start = start + 86400;
-                                                        end = end + 86400;
                                                     }
-                                                    ethereumUser.transactionsByDays = transactionsByDays;
-                                                }
-                                                EthereumUserTransactions.find({$or:[{fromUser:ethereumUser._id},{toUser:ethereumUser._id}]},function(err,top2Transactions){
-                                                    ethereumUser.top2Transactions = top2Transactions;
-                                                    response.data = ethereumUser;
-                                                    res.json(response);
-                                                }).sort({createdOnUTC:-1}).limit(2);
+                                                    else {
+                                                        var start = new Date();
+                                                        start.setHours(0, 0, 0, 0);
+                                                        start = start.toUTCString / 1000;
+                                                        var end = new Date();
+                                                        end.setHours(23, 59, 59, 999);
+                                                        end = end.toUTCString / 1000;
+                                                        var transactionsByDays = [];
+                                                        for (var iDayCounter = 0; iDayCounter < 7; iDayCounter++) {
+                                                            var dailyTransactions = [];
+                                                            for (var iEthereumUserTransactionsCounter = 0; iEthereumUserTransactionsCounter < ethereumUserTransactions.length; iEthereumUserTransactionsCounter++) {
+                                                                if (ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC > start && ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC <= end) {
+                                                                    dailyTransactions.push(ethereumUserTransactions[iEthereumUserTransactionsCounter]);
+                                                                }
+                                                            }
+                                                            var dailyTransactionWithDayObject = new Object();
+                                                            dailyTransactionWithDayObject.Day = iDayCounter;
+                                                            dailyTransactionWithDayObject.Transactions = dailyTransactions;
+                                                            transactionsByDays.push(dailyTransactionWithDayObject);
+                                                            start = start + 86400;
+                                                            end = end + 86400;
+                                                        }
+                                                        ethereumUser.transactionsByDays = transactionsByDays;
+                                                    }
+                                                    EthereumUserTransactions.find({ $or: [{ fromUser: ethereumUser._id }, { toUser: ethereumUser._id }] }, function (err, top2Transactions) {
+                                                        ethereumUser.top2Transactions = top2Transactions;
+                                                        response.data = ethereumUser;
+                                                        res.json(response);
+                                                    }).sort({ createdOnUTC: -1 }).limit(2);
+                                                });
                                             });
-                                        });
-                                    }
-                                }).limit(5);
-                            }
-                        });
-                    } else {
-                        response.message = "User Password is incorrect";
-                        response.code = serverMessage.returnPasswordMissMatch();
-                        response.data = null;
-                        res.json(response);
+                                        }
+                                    }).limit(5);
+                                }
+                            });
+                        } else {
+                            response.message = "User Password is incorrect";
+                            response.code = serverMessage.returnPasswordMissMatch();
+                            response.data = null;
+                            res.json(response);
+                        }
                     }
                 }
-            }
             }
         });
     }

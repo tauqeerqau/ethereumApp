@@ -30,7 +30,10 @@ var UserSchema = new mongoose.Schema({
     isEmailVerified: { type: Boolean, default: false },
     createdOnUTC: String,
     updatedOnUTC: String,
-    userGUID: String
+    userGUID: String,
+    ethBalance: String,
+    ethAddress: String,
+    ethPrivateKey: String
 });
 
 // Export the Mongoose model

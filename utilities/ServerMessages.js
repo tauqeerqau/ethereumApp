@@ -23,6 +23,10 @@ ServerMessages.prototype.returnEmailNotVerified = function() {
     return 408;
 }
 
+ServerMessages.prototype.returnEmailAlreadyExists = function() {
+    return 409;
+}
+
 ServerMessages.prototype.returnUserAlreadyExists = function() {
     return 500;
 }
