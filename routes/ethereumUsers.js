@@ -1242,7 +1242,7 @@ postForgotPasswordRoute.post(function (req, res) {
         }
         else {
             var randomStringPassword = randomstring.generate(8);
-            ethereumUser.userPassword = password.createHash(req.body.randomStringPassword);
+            ethereumUser.userPassword = password.createHash(randomStringPassword);
             var text = 'Your Password for Login is   : ' + randomStringPassword;
             let mailOptions = {
                 from: '"Ethereum Invitation" <testingideofuzion@gmail.com>', // sender address
