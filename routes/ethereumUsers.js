@@ -144,8 +144,8 @@ postEthereumUserRoute.post(function (req, res) {
             };
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
-                    response.code = StatusCodeEnum.FAILURE;
-                    response.message = StatusMessages.FAILURE;
+                    response.code = serverMessage.FAILURE;
+                    response.message = "FAILURE";
                     response.data = error;
                     //res.json(response);
                 }
@@ -169,7 +169,7 @@ postEthereumUserRoute.post(function (req, res) {
 
                         } else {
                             response.message = "User Added Successfully";
-                            response.code = serverMessage.returnSuccess();;
+                            response.code = serverMessage.returnSuccess();
                             response.data = ethereumUser;
                             res.json(response);
                         }
@@ -1225,5 +1225,5 @@ postForgotPasswordRoute.post(function (req, res) {
         }
     });
 });
-//test 
+
 module.exports = router;
