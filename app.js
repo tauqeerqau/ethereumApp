@@ -18,6 +18,7 @@ var index = require('./routes/index');
 var ServerMessage = require('./utilities/ServerMessages');
 var users = require('./routes/users');
 var ethereumUsers = require('./routes/ethereumUsers');
+var ethereumUserLogin = require('./routes/ethereumUserLogin');
 var ethereumUserTransactions = require('./routes/ethereumUserTransactions');
 var Response = require('./utilities/response')
 
@@ -60,6 +61,10 @@ app.get('/', function (req, res) {
         else
         {
             response.message = "Success";
+            ethereumUser.isEmailVerified = true;
+            ethereumUser.save(function(err,ethereumUser){
+
+            });
             response.code = serverMessage.returnSuccess();
             response.data = null;
             res.json(response.message);
@@ -91,6 +96,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/users', users);
 app.use('/ethereumUsers', ethereumUsers);
 app.use('/ethereumUserTransactions',ethereumUserTransactions);
+app.use('/ethereumUserLogin',ethereumUserLogin);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

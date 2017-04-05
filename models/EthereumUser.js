@@ -33,7 +33,8 @@ var UserSchema = new mongoose.Schema({
     userGUID: String,
     ethBalance: String,
     ethAddress: String,
-    ethPrivateKey: String
+    ethPrivateKey: String,
+    token: String
 });
 
 // Export the Mongoose model

@@ -278,8 +278,8 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                                                 }
                                                             }
                                                             var dailyTransactionWithDayObject = new Object();
-                                                            dailyTransactionWithDayObject.Day = iDayCounter;
-                                                            dailyTransactionWithDayObject.TransactionsCount = dailyTransactions.length;
+                                                            dailyTransactionWithDayObject.day = iDayCounter;
+                                                            dailyTransactionWithDayObject.count = dailyTransactions.length;
                                                             if (dailyTransactions.length > 0) {
                                                                 transactionsByDays.push(dailyTransactionWithDayObject);
                                                             }
