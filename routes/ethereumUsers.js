@@ -133,12 +133,12 @@ postEthereumUserRoute.post(function (req, res) {
             ethereumUser.updatedOnUTC = Math.floor(new Date() / 1000);
             ethereumUser.userGUID = uuid.v4();
             var fullUrl = req.protocol + '://' + req.get('host');
-            var invitationFunction = fullUrl + "?userGUID=" + ethereumUser.userGUID + "&email=" + ethereumUser.email;
+            var invitationFunction = fullUrl + "?userGUID=" + ethereumUser.userGUID + "&email=" + ethereumUser.userEmail;
             //fullUrl = fullUrl + invitationFunction;
             var text = 'Your Invitation Link is  : ' + invitationFunction;
             let mailOptions = {
                 from: '"Ethereum Invitation" <testingideofuzion@gmail.com>', // sender address
-                to: ethereumUser.email, // list of receivers
+                to: ethereumUser.userEmail, // list of receivers
                 subject: 'Invitation Link', // Subject line
                 text: text, // plain text body
             };
