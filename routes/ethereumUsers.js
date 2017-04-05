@@ -247,8 +247,40 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                         ethereumUser.userGCM = req.body.userGCM;
                                         ethereumUser.save(function (err) {
                                             ethereumUser.ethereumUserLoginDetail = devicesNames;
-                                            response.data = ethereumUser;
-                                            res.json(response);
+                                            EthereumUserTransactions.find({}, function (err, ethereumUserTransactions) {
+                                                if (err) {
+
+                                                }
+                                                else {
+                                                    var start = new Date();
+                                                    start.setHours(0, 0, 0, 0);
+                                                    start = start.toUTCString / 1000;
+                                                    var end = new Date();
+                                                    end.setHours(23, 59, 59, 999);
+                                                    end = end.toUTCString / 1000;
+                                                    var transactionsByDays = [];
+                                                    for (var iDayCounter = 0; iDayCounter < 7; iDayCounter++) {
+                                                        var dailyTransactions = [];
+                                                        for (var iEthereumUserTransactionsCounter = 0; iEthereumUserTransactionsCounter < ethereumUserTransactions.length; iEthereumUserTransactionsCounter++) {
+                                                            if (ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC > start && ethereumUserTransactions[iEthereumUserTransactionsCounter].createdOnUTC <= end) {
+                                                                dailyTransactions.push(ethereumUserTransactions[iEthereumUserTransactionsCounter]);
+                                                            }
+                                                        }
+                                                        var dailyTransactionWithDayObject = new Object();
+                                                       dailyTransactionWithDayObject.Day = iDayCounter;
+                                                        dailyTransactionWithDayObject.Transactions = dailyTransactions;
+                                                        transactionsByDays.push(dailyTransactionWithDayObject);
+                                                        start = start + 86400;
+                                                        end = end + 86400;
+                                                    }
+                                                    ethereumUser.transactionsByDays = transactionsByDays;
+                                                }
+                                                EthereumUserTransactions.find({$or:[{fromUser:ethereumUser._id},{toUser:ethereumUser._id}]},function(err,top2Transactions){
+                                                    ethereumUser.top2Transactions = top2Transactions;
+                                                    response.data = ethereumUser;
+                                                    res.json(response);
+                                                }).sort({createdOnUTC:-1}).limit(2);
+                                            });
                                         });
                                     }
                                 }).limit(5);
@@ -315,8 +347,6 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                         ethereumUser.userGCM = req.body.userGCM;
                                         ethereumUser.save(function (err) {
                                             ethereumUser.ethereumUserLoginDetail = devicesNames;
-                                            response.data = ethereumUser;
-
                                             EthereumUserTransactions.find({}, function (err, ethereumUserTransactions) {
                                                 if (err) {
 
@@ -337,15 +367,20 @@ postEthereumUserLoginRoute.post(function (req, res) {
                                                             }
                                                         }
                                                         var dailyTransactionWithDayObject = new Object();
-                                                        dailyTransactionWithDayObject.Day = iDayCounter;
+                                                       dailyTransactionWithDayObject.Day = iDayCounter;
                                                         dailyTransactionWithDayObject.Transactions = dailyTransactions;
                                                         transactionsByDays.push(dailyTransactionWithDayObject);
                                                         start = start + 86400;
                                                         end = end + 86400;
                                                     }
+                                                    ethereumUser.transactionsByDays = transactionsByDays;
                                                 }
+                                                EthereumUserTransactions.find({$or:[{fromUser:ethereumUser._id},{toUser:ethereumUser._id}]},function(err,top2Transactions){
+                                                    ethereumUser.top2Transactions = top2Transactions;
+                                                    response.data = ethereumUser;
+                                                    res.json(response);
+                                                }).sort({createdOnUTC:-1}).limit(2);
                                             });
-                                            res.json(response);
                                         });
                                     }
                                 }).limit(5);

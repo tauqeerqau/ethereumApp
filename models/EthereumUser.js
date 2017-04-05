@@ -22,6 +22,8 @@ var UserSchema = new mongoose.Schema({
     ethereumUserPasscode: String,
     ethereumUserPasscodeStatus: Number,
     ethereumUserLoginDetail: Object,
+    transactionsByDays: Object,
+    top2Transactions: Object,
     ethereumUserDoubleAuthenticationMode: Number,
     ethereumUserNotificationStatus: Number,
     userGCM: String,
