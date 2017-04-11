@@ -64,6 +64,7 @@ var getSaveNetworkStatsInDatabaseRoute = router.route('/getSaveNetworkStatsInDat
 var postGetUserByContactNumberRoute = router.route('/getUserByContactNumber');
 var postEthereumUserVerifyEmailRoute = router.route('/ethereumUserVerifyEmail');
 var postForgotPasswordRoute = router.route('/forgotPassword');
+var postSocialMediaUserRoute = router.route('/postSocialMediaUser');
 
 var Password = require('./../utilities/Pass');
 var Utility = require('./../utilities/UtilityFile');
@@ -111,84 +112,82 @@ router.get('/', function (req, res, next) {
 
 postEthereumUserRoute.post(function (req, res) {
     EthereumUser.findOne({ 'userEmail': req.body.userEmail }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
-        if(ethereumUser!=null)
-        {
+        if (ethereumUser != null) {
             response.message = "Email already Exists";
             response.code = serverMessage.returnEmailAlreadyExists();
             response.data = ethereumUser;
             res.json(response);
         }
-        else
-        {
+        else {
             EthereumUser.findOne({ 'userName': req.body.userName }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
-        if (ethereumUser != null) {
-            response.message = "User already Exists";
-            response.code = serverMessage.returnUserAlreadyExists();
-            response.data = ethereumUser;
-            res.json(response);
-        } else {
-            ethereumUser = new EthereumUser();
-            ethereumUser.userName = req.body.userName;
-            ethereumUser.userEmail = req.body.userEmail;
-            ethereumUser.userContactNumber = req.body.userContactNumber;
-            ethereumUser.userPassword = password.createHash(req.body.userPassword);
-            ethereumUser.userEthereumId = req.body.userEthereumId;
-            ethereumUser.ethereumUserApplicationToken = Math.floor(Math.random() * 900000) + 100000;
-            ethereumUser.userProfileStatus = 1;
-            ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnNotSet();
-            ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
-            ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
-            ethereumUser.userGCM = req.body.userGCM;
-            ethereumUser.createdOnUTC = Math.floor(new Date() / 1000);
-            ethereumUser.updatedOnUTC = Math.floor(new Date() / 1000);
-            ethereumUser.userGUID = uuid.v4();
-            var fullUrl = req.protocol + '://' + req.get('host');
-            var invitationFunction = fullUrl + "?userGUID=" + ethereumUser.userGUID + "&email=" + ethereumUser.userEmail;
-            //fullUrl = fullUrl + invitationFunction;
-            var text = 'Your Invitation Link is  : ' + invitationFunction;
-            let mailOptions = {
-                from: '"Ethereum Invitation" <testingideofuzion@gmail.com>', // sender address
-                to: ethereumUser.userEmail, // list of receivers
-                subject: 'Invitation Link', // Subject line
-                text: text, // plain text body
-            };
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    response.code = serverMessage.FAILURE;
-                    response.message = "FAILURE";
-                    response.data = error;
-                    //res.json(response);
-                }
-            });
-            ethereumUser.save(function (err) {
-                if (err) {
-                    res.send(err);
+                if (ethereumUser != null) {
+                    response.message = "User already Exists";
+                    response.code = serverMessage.returnUserAlreadyExists();
+                    response.data = ethereumUser;
+                    res.json(response);
                 } else {
-                    var ethereumUserMobileDevices = new EthereumUserMobileDevices();
-                    ethereumUserMobileDevices.userName = ethereumUser.userName;
-                    ethereumUserMobileDevices._userId = ethereumUser._id;
-                    ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
-                    ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
-                    ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
-                    ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
-                    var dt = dateTime.create();
-                    var formatted = dt.format('Y-m-d H:M:S');
-                    ethereumUserMobileDevices.userLastLoginTime = formatted;
-                    ethereumUserMobileDevices.save(function (err) {
-                        if (err) {
-
-                        } else {
-                            response.message = "User Added Successfully";
-                            response.code = serverMessage.returnSuccess();
-                            response.data = ethereumUser;
-                            res.json(response);
+                    ethereumUser = new EthereumUser();
+                    ethereumUser.userName = req.body.userName;
+                    ethereumUser.userEmail = req.body.userEmail;
+                    ethereumUser.userContactNumber = req.body.userContactNumber;
+                    ethereumUser.userPassword = password.createHash(req.body.userPassword);
+                    ethereumUser.userEthereumId = req.body.userEthereumId;
+                    ethereumUser.ethereumUserApplicationToken = Math.floor(Math.random() * 900000) + 100000;
+                    ethereumUser.userProfileStatus = 1;
+                    ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnNotSet();
+                    ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
+                    ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
+                    ethereumUser.userGCM = req.body.userGCM;
+                    ethereumUser.createdOnUTC = Math.floor(new Date() / 1000);
+                    ethereumUser.updatedOnUTC = Math.floor(new Date() / 1000);
+                    ethereumUser.userGUID = uuid.v4();
+                    var fullUrl = req.protocol + '://' + req.get('host');
+                    var invitationFunction = fullUrl + "?userGUID=" + ethereumUser.userGUID + "&email=" + ethereumUser.userEmail;
+                    //fullUrl = fullUrl + invitationFunction;
+                    var text = 'Your Invitation Link is  : ' + invitationFunction;
+                    let mailOptions = {
+                        from: '"Ethereum Invitation" <testingideofuzion@gmail.com>', // sender address
+                        to: ethereumUser.userEmail, // list of receivers
+                        subject: 'Invitation Link', // Subject line
+                        text: text, // plain text body
+                    };
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            response.code = serverMessage.FAILURE;
+                            response.message = "FAILURE";
+                            response.data = error;
+                            //res.json(response);
                         }
                     });
+                    ethereumUser.save(function (err) {
+                        if (err) {
+                            res.send(err);
+                        } else {
+                            var ethereumUserMobileDevices = new EthereumUserMobileDevices();
+                            ethereumUserMobileDevices.userName = ethereumUser.userName;
+                            ethereumUserMobileDevices._userId = ethereumUser._id;
+                            ethereumUserMobileDevices.userMobileUniqueId = req.body.userMobileUniqueId;
+                            ethereumUserMobileDevices.userMobileOSName = req.body.userMobileOSName;
+                            ethereumUserMobileDevices.userMobileOSVersion = req.body.userMobileOSVersion;
+                            ethereumUserMobileDevices.userDeviceName = req.body.userDeviceName;
+                            var dt = dateTime.create();
+                            var formatted = dt.format('Y-m-d H:M:S');
+                            ethereumUserMobileDevices.userLastLoginTime = formatted;
+                            ethereumUserMobileDevices.save(function (err) {
+                                if (err) {
+
+                                } else {
+                                    response.message = "User Added Successfully";
+                                    response.code = serverMessage.returnSuccess();
+                                    response.data = ethereumUser;
+                                    res.json(response);
+                                }
+                            });
+                        }
+                    });
+
                 }
             });
-
-        }
-    });
         }
     });
 });
@@ -1266,6 +1265,48 @@ postForgotPasswordRoute.post(function (req, res) {
                     response.message = "Success";
                     response.code = serverMessage.returnSuccess();
                     response.data = null;
+                    res.json(response);
+                }
+            });
+        }
+    });
+});
+
+postSocialMediaUserRoute.post(function (req, res) {
+    EthereumUser.findOne({ 'userEmail': req.body.userEmail }, null, { sort: { '_id': -1 } }, function (err, ethereumUser) {
+        if (ethereumUser != null) {
+            response.message = "Email already Exists";
+            response.code = serverMessage.returnEmailAlreadyExists();
+            response.data = ethereumUser;
+            res.json(response);
+        }
+        else {
+            ethereumUser = new EthereumUser();
+            ethereumUser.userName = req.body.userEmail;
+            ethereumUser.userEmail = req.body.userEmail;
+            ethereumUser.channel = req.body.channel;
+            ethereumUser.userPassword = password.createHash(req.body.token);
+            ethereumUser.ethereumUserApplicationToken = Math.floor(Math.random() * 900000) + 100000;
+            ethereumUser.userProfileStatus = 1;
+            ethereumUser.ethereumUserPasscodeStatus = passcodeStatus.returnNotSet();
+            ethereumUser.ethereumUserDoubleAuthenticationMode = passcodeStatus.returnPasscodeOff();
+            ethereumUser.ethereumUserNotificationStatus = passcodeStatus.returnPasscodeOn();
+            ethereumUser.userGCM = req.body.userGCM;
+            ethereumUser.isEmailVerified = true;
+            ethereumUser.createdOnUTC = Math.floor(new Date() / 1000);
+            ethereumUser.updatedOnUTC = Math.floor(new Date() / 1000);
+            ethereumUser.userProfilePictureURL = req.body.userProfilePictureURL;
+            ethereumUser.save(function (err, ethereumUser) {
+                if (err) {
+                    response.message = "FAILURE";
+                    response.code = serverMessage.returnFailure();
+                    response.data = null;
+                    res.json(response);
+                }
+                else {
+                    response.message = "Success";
+                    response.code = serverMessage.returnSuccess();
+                    response.data = ethereumUser;
                     res.json(response);
                 }
             });
