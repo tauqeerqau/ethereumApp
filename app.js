@@ -29,7 +29,7 @@ mongoose.Promise = require('bluebird');
 //var app = express();
 //server.listen(3000);
 server.listen(process.env.PORT);
-//for socket IO page
+//for socket IO page..
 app.get('/', function (req, res) {
   var serverMessage = new ServerMessage({
 });
